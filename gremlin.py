@@ -106,15 +106,13 @@ app.layout = html.Div(
         Input("interval_dropdown", "value"),
         Input("date_picker", "start_date"),
         Input("date_picker", "end_date"),
+        Input("indicator_dropdown", "value"),
     ],
 )
-def update_chart(ticker_value, interval_value, start_date, end_date):
+def update_chart(ticker_value, interval_value, start_date, end_date, indicator_value):
 
-    if start_date is None:
-        start_date = end_date
-
-    if ticker_value is None or interval_value is None:
-        return go.Figure()
+    if ticker_value is None or interval_value is None or start_date is None:
+        return go.Figure(), False
 
     ticker = yf.download(
         tickers=ticker_value,
@@ -122,7 +120,7 @@ def update_chart(ticker_value, interval_value, start_date, end_date):
         start=start_date,
         end=end_date,
         prepost=False,
-        repaire=True,
+        threads=True,
     )
 
     if ticker.empty:
@@ -136,69 +134,70 @@ def update_chart(ticker_value, interval_value, start_date, end_date):
     else:
         tick_indices = [i for i in range(0, length_df, length_df // 25)]
     tick_values = ticker.index[tick_indices]
-    fig = go.Figure(
-        data=[
-            go.Candlestick(
+
+    # Convert x-axis labels based on interval (date type)
+    if ticker.columns[0] == "Datetime":
+        ticktext = [str(val)[:19] for val in ticker.iloc[tick_indices, 0]]
+        # Drop last row beacuse it is called incorrectly for some reason
+        if str(ticker.iloc[-1, 0])[:19] != str(ticker.iloc[-2, 0])[:19]:
+            ticker = ticker[:-1]
+
+    else:
+        ticktext = [str(val)[:10] for val in ticker.iloc[tick_indices, 0]]
+
+    fig_data = [
+        go.Candlestick(
+            x=ticker.index,
+            open=ticker["Open"],
+            high=ticker["High"],
+            low=ticker["Low"],
+            close=ticker["Close"],
+            name="OHLC",
+        )
+    ]
+
+    # Add moving average to the plot if selected
+    if indicator_value == "Moving average":
+        ticker2 = yf.download(
+            tickers=ticker_value,
+            interval=interval_value,
+            start=(
+                datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
+                - timedelta(days=20)
+            ),
+            end=end_date,
+            prepost=False,
+            threads=True,
+        )
+        if ticker2.empty:
+            ticker["Moving Average"] = ticker["Close"].rolling(window=10).mean()
+        else:
+            ticker2["Moving Average"] = ticker2["Close"].rolling(window=10).mean()
+            ticker2 = ticker2[20:]
+            ticker = ticker2
+            ticker = ticker.reset_index()
+        fig_data.append(
+            go.Scatter(
                 x=ticker.index,
-                open=ticker["Open"],
-                high=ticker["High"],
-                low=ticker["Low"],
-                close=ticker["Close"],
+                y=ticker["Moving Average"],
+                mode="lines",
+                name="Moving Average",
             )
-        ],
+        )
+
+    fig = go.Figure(
+        data=fig_data,
         layout=go.Layout(
             title=ticker_value,
             yaxis={"autorange": True},
             xaxis_rangeslider_visible=False,
-            xaxis={
-                "tickmode": "array",
-                "tickvals": tick_values,
-                "ticktext": ticker.iloc[tick_indices, 0],
-            },
+            xaxis={"tickmode": "array", "tickvals": tick_values, "ticktext": ticktext,},
         ),
     )
+
+    print(ticker)
 
     return fig, False
-
-
-@app.callback(
-    Output("ticker_cndl_chart", "figure"), Input("indicator_dropdown", "value")
-)
-def draw_indicator(ticker, indicator_value):
-
-    if ticker.empty:
-        return go.Figure()
-
-    if indicator_value == "Moving average":
-        ticker["Moving Average"] = ticker.rolling(window=10).mean()
-
-    length_df = len(ticker.index)
-    if length_df < 25:
-        tick_indices = [i for i in range(0, length_df, 1)]
-    else:
-        tick_indices = [i for i in range(0, length_df, length_df // 25)]
-    tick_values = ticker.index[tick_indices]
-    fig = go.Figure(
-        data=[
-            go.Candlestick(
-                x=ticker.index,
-                open=ticker["Open"],
-                high=ticker["High"],
-                low=ticker["Low"],
-                close=ticker["Close"],
-            ),
-            go.Scatter(x=ticker.index, y=ticker["Moving Average"]),
-        ],
-        layout=go.Layout(
-            yaxis={"autorange": True},
-            xaxis_rangeslider_visible=False,
-            xaxis={
-                "tickmode": "array",
-                "tickvals": tick_values,
-                "ticktext": ticker.iloc[tick_indices, 0],
-            },
-        ),
-    )
 
 
 if __name__ == "__main__":
