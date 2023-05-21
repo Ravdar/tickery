@@ -409,8 +409,6 @@ def update_chart(ticker_value, interval_value, start_date, end_date, check_value
     ticker["Gap"] = (ticker["Open"] - ticker["Close"].shift(1)) / ticker["Open"] * 100
     ticker["Gap"] = ticker["Gap"].fillna(0)
 
-    print(ticker)
-
     # STATISTICS
     # Whole period
     min = round(ticker["Low"].min(), 2)
