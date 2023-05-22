@@ -76,6 +76,24 @@ app.layout = html.Div(
             placeholder="Select indicator",
             style={"width": "230px", "margin-top": "10px"},
         ),
+        dbc.Modal(
+            [
+                dbc.ModalHeader(dbc.ModalTitle("Moving average")),
+                dbc.ModalBody(
+                    [
+                        dbc.Label("Length:"),
+                        dbc.Input(id="ma_input", type="number", disabled=False),
+                    ]
+                ),
+                dbc.ModalFooter(
+                    [
+                        dbc.Button("OK", color="primary", id="ma_ok"),
+                        dbc.Button("Cancel", id="ma_cancel"),
+                    ]
+                ),
+            ],
+            id="moving_average_modal",
+        ),
         dcc.Graph(
             id="ticker_cndl_chart",
             figure=go.Figure(
@@ -163,7 +181,7 @@ def update_chart(ticker_value, interval_value, start_date, end_date, indicator_v
             interval=interval_value,
             start=(
                 datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
-                - timedelta(days=20)
+                - timedelta(days=15)
             ),
             end=end_date,
             prepost=False,
@@ -173,7 +191,8 @@ def update_chart(ticker_value, interval_value, start_date, end_date, indicator_v
             ticker["Moving Average"] = ticker["Close"].rolling(window=10).mean()
         else:
             ticker2["Moving Average"] = ticker2["Close"].rolling(window=10).mean()
-            ticker2 = ticker2[20:]
+            row_diff = len(ticker2) - len(ticker)
+            ticker2 = ticker2[row_diff:]
             ticker = ticker2
             ticker = ticker.reset_index()
         fig_data.append(
@@ -194,7 +213,6 @@ def update_chart(ticker_value, interval_value, start_date, end_date, indicator_v
             xaxis={"tickmode": "array", "tickvals": tick_values, "ticktext": ticktext,},
         ),
     )
-
     print(ticker)
 
     return fig, False
