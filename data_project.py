@@ -480,11 +480,6 @@ def update_chart(ticker_value, interval_value, start_date, end_date, check_value
                 title=ticker_value,
                 yaxis={"autorange": True},
                 xaxis_rangeslider_visible=False,
-                xaxis={
-                    "tickmode": "array",
-                    "tickvals": tick_values,
-                    "ticktext": ticker.iloc[tick_indices, 0],
-                },
             ),
         )
 
