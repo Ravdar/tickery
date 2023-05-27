@@ -345,15 +345,20 @@ def show_ma_modal_button(n_clicks):
 
 # Confirming settings
 @app.callback(
-    [Output("ma_button", "n_clicks"), Output("ma_button", "children")],
+    [
+        Output("ma_button", "n_clicks"),
+        Output("ma_button", "children"),
+        Output("ma_length", "value"),
+    ],
     Input("ma_ok_button", "n_clicks"),
     [State("ma_length_button", "value"), State("ma_button", "children")],
 )
 def update_indicator(n_clicks, indicator_length, indicator_name):
+
     if n_clicks != None:
         button_value = f"{indicator_name[:14]}({indicator_length})"
         n_clicks = None
-        return None, button_value
+        return None, button_value, indicator_length
 
 
 # Deleting button
@@ -379,15 +384,24 @@ def show_bb_modal_button(n_clicks):
 
 # Confirming settings
 @app.callback(
-    [Output("bb_button", "n_clicks"), Output("bb_button", "children")],
+    [
+        Output("bb_button", "n_clicks"),
+        Output("bb_button", "children"),
+        Output("bb_length", "value"),
+        Output("bb_std", "value"),
+    ],
     Input("bb_ok_button", "n_clicks"),
-    [State("bb_length_button", "value"), State("bb_button", "children")],
+    [
+        State("bb_length_button", "value"),
+        State("bb_std_button", "value"),
+        State("bb_button", "children"),
+    ],
 )
-def update_indicator(n_clicks, indicator_length, indicator_name):
+def update_indicator(n_clicks, indicator_length, indicator_std, indicator_name):
     if n_clicks != None:
         button_value = f"{indicator_name[:15]}({indicator_length})"
         n_clicks = None
-        return None, button_value
+        return None, button_value, indicator_length, indicator_std
 
 
 # Deleting button
@@ -400,9 +414,79 @@ def delete_bb_buttons(n_clicks):
         return {"display": "none"}, {"display": "none"}
 
 
+@app.callback(
+    Output("ticker_cndl_chart", "figure"),
+    [Input("ma_ok_button", "n_clicks"), Input("bb_ok_button", "n_clicks")],
+    [
+        State("input_ticker", "value"),
+        State("interval_dropdown", "value"),
+        State("date_picker", "start_date"),
+        State("date_picker", "end_date"),
+        State("ma_length", "value"),
+        State("bb_length", "value"),
+        State("bb_std", "value"),
+        State("ticker_cndl_chart", "data"),
+    ],
+)
+def update_indicators2(
+    ma_ok,
+    bb_ok,
+    ticker_value,
+    interval_value,
+    start_date,
+    end_date,
+    ma_length,
+    bb_length,
+    bb_std,
+    fig_data,
+):
+
+    print(fig_data)
+
+    if ma_ok != None:
+        print("fullfilled ma")
+        add_moving_average(
+            ma_length,
+            ticker,
+            fig_data,
+            ticker_value,
+            interval_value,
+            start_date,
+            end_date,
+        )
+
+    if bb_ok != None:
+        print("fullfilled bb")
+        add_bollinger_bands(
+            bb_length,
+            bb_std,
+            ticker,
+            fig_data,
+            ticker_value,
+            interval_value,
+            start_date,
+            end_date,
+        )
+
+    fig = go.Figure(
+        data=fig_data,
+        layout=go.Layout(
+            title=ticker_value,
+            yaxis={"autorange": True},
+            xaxis_rangeslider_visible=False,
+            xaxis={"tickmode": "array"},
+        ),
+    )
+
+    return fig
+
+
 # UPDATING CHART
 @app.callback(
-    [Output("ticker_cndl_chart", "figure"), Output("error_alert", "is_open")],
+    [
+        Output("ticker_cndl_chart", "figure", allow_duplicate=True),
+        Output("error_alert", "is_open"),
+    ],
     [
         Input("input_ticker", "value"),
         Input("interval_dropdown", "value"),
@@ -414,6 +498,7 @@ def delete_bb_buttons(n_clicks):
     State("ma_length", "value"),
     State("bb_length", "value"),
     State("bb_std", "value"),
+    prevent_initial_call=True,
 )
 def update_chart(
     ticker_value,
@@ -483,7 +568,7 @@ def update_chart(
             start_date,
             end_date,
         )
-    if bb_ok:
+    if bb_ok != None:
         add_bollinger_bands(
             bb_length,
             bb_std,
