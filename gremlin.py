@@ -16,18 +16,19 @@ indicators = ["Moving average", "Bollinger Bands", "MACD", "Stochastic"]
 ticker = pd.DataFrame(columns=["Datetime", "Open", "High", "Low", "Close", "Adj Close"])
 today_date = pd.Timestamp.now()
 week_ago = pd.to_datetime(datetime.datetime.now() - timedelta(weeks=1))
+colors = {"background": "#111111", "text": "#7FDBFF"}
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 
 def add_indicator_button(
-    indicator_short, indicator_name, indicator_settings, s2_display, button_visible
+    indicator_short, indicator_name, length, std, s2_display, button_visible
 ):
 
     return html.Div(
         [
             dbc.Button(
-                f"{indicator_name}({indicator_settings})",
+                f"{indicator_name}({length, std}",
                 id=f"{indicator_short}_button",
                 color="primary",
                 className="me-1",
@@ -132,11 +133,12 @@ app.layout = html.Div(
         html.Div(
             id="modals",
             children=[
-                add_indicator_button("ma", "Moving average", 0, "none", "none"),
-                add_indicator_button("bb", "Bollinger Bands", 0, "display", "none"),
+                add_indicator_button("ma", "Moving average", 0, 0, "none", "none"),
+                add_indicator_button("bb", "Bollinger Bands", 0, 0, "display", "none"),
+                add_indicator_button("st", "Stochastic", 0, 0, "display", "none"),
+                add_indicator_button("macd", "MACD", 0, 0, "display", "none"),
             ],
         ),
-        html.Div(id="indicators_container", children=[],),
         dcc.Graph(
             id="ticker_cndl_chart",
             figure=go.Figure(
@@ -151,11 +153,27 @@ app.layout = html.Div(
                 ],
                 layout=go.Layout(
                     title="Chart",
+                    showlegend=False,
                     yaxis={"autorange": True},
                     xaxis_rangeslider_visible=False,
+                    margin=go.layout.Margin(
+                        l=40,  # left margin
+                        r=40,  # right margin
+                        b=5,  # bottom margin
+                        t=40,  # top margin
+                    ),
                 ),
             ),
+            style={
+                "margin_bottom": "0px",
+                "padding-bottom": "0px",
+                "height": "550px",
+                "width": "100%",
+            },
+            className="h-5",
         ),
+        html.Div(id="stoch_container", children=[],),
+        html.Div(id="macd_container", children=[],),
     ],
 )
 
@@ -242,10 +260,191 @@ def add_bollinger_bands(
     )
 
 
+def add_stochastic(
+    st_length,
+    slowing,
+    ticker,
+    ticker_value,
+    interval_value,
+    start_date,
+    end_date,
+    xaxis,
+):
+
+    ticker2 = yf.download(
+        tickers=ticker_value,
+        interval=interval_value,
+        start=(
+            datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
+            - timedelta(days=(st_length + 10))
+        ),
+        end=end_date,
+        prepost=False,
+        threads=True,
+    )
+
+    if ticker2.empty:
+        length_high = ticker["High"].rolling(st_length).max()
+        length_low = ticker["Low"].rolling(st_length).min()
+        ticker["%K"] = (ticker["Close"] - length_low) * 100 / (length_high - length_low)
+        ticker["%D"] = ticker["%K"].rolling(slowing).mean()
+    else:
+        length_high = ticker2["High"].rolling(st_length).max()
+        length_low = ticker2["Low"].rolling(st_length).min()
+        ticker2["%K"] = (
+            (ticker2["Close"] - length_low) * 100 / (length_high - length_low)
+        )
+        ticker2["%D"] = ticker2["%K"].rolling(slowing).mean()
+        row_diff = len(ticker2) - len(ticker)
+        ticker2 = ticker2[row_diff:]
+        ticker = ticker2
+    ticker = ticker.reset_index()
+
+    fig2 = (
+        dcc.Graph(
+            id="stochastic_chart",
+            figure=go.Figure(
+                data=[
+                    go.Scatter(x=ticker.iloc[:, 0], y=ticker["%K"], name="%K"),
+                    go.Scatter(x=ticker.iloc[:, 0], y=ticker["%D"], name="%D"),
+                ],
+                layout=go.Layout(
+                    showlegend=False,
+                    yaxis={"autorange": True},
+                    xaxis_rangeslider_visible=False,
+                    xaxis={"showticklabels": xaxis},
+                    margin=go.layout.Margin(
+                        l=40,  # left margin
+                        r=40,  # right margin
+                        b=5,  # bottom margin
+                        t=0,  # top margin
+                    ),
+                ),
+            ),
+            style={
+                "margin-top": "0px",
+                "height": "175px",
+                "padding-top": "0px",
+                "width": "100%",
+            },
+        ),
+    )
+
+    return fig2
+
+
+def add_macd(
+    fast_ema,
+    slow_ema,
+    ticker,
+    ticker_value,
+    interval_value,
+    start_date,
+    end_date,
+    xaxis,
+):
+
+    ticker2 = yf.download(
+        tickers=ticker_value,
+        interval=interval_value,
+        start=(
+            datetime.datetime.strptime(start_date, "%Y-%m-%d").date()
+            - timedelta(days=(slow_ema + 10))
+        ),
+        end=end_date,
+        prepost=False,
+        threads=True,
+    )
+
+    if ticker2.empty:
+        ticker["Fast EMA"] = ticker["Close"].ewm(span=fast_ema, adjust=False).mean()
+        ticker["Slow EMA"] = ticker["Close"].ewm(span=slow_ema, adjust=False).mean()
+        ticker["MACD"] = ticker["Fast EMA"] - ticker["Slow EMA"]
+    else:
+        ticker2["Fast EMA"] = ticker2["Close"].ewm(span=fast_ema, adjust=False).mean()
+        ticker2["Slow EMA"] = ticker2["Close"].ewm(span=slow_ema, adjust=False).mean()
+        ticker2["MACD"] = ticker2["Fast EMA"] - ticker2["Slow EMA"]
+        row_diff = len(ticker2) - len(ticker)
+        ticker2 = ticker2[row_diff:]
+        ticker = ticker2
+    ticker = ticker.reset_index()
+    macd_positive = ticker.loc[ticker["MACD"] >= 0]
+    macd_negative = ticker.loc[ticker["MACD"] < 0]
+
+    fig3 = dcc.Graph(
+        id="macd_chart",
+        figure=go.Figure(
+            data=[
+                # Use different colors for positive and negative values
+                go.Bar(
+                    x=macd_positive.iloc[:, 0],
+                    y=macd_positive["MACD"],
+                    name="MACD",
+                    yaxis="y1",
+                    marker=dict(color="blue"),
+                ),
+                go.Bar(
+                    x=macd_negative.iloc[:, 0],
+                    y=macd_negative["MACD"],
+                    name="MACD",
+                    yaxis="y1",
+                    marker=dict(color="Aqua"),
+                ),
+                go.Scatter(
+                    x=ticker.iloc[:, 0],
+                    y=ticker["Fast EMA"],
+                    name="Fast EMA",
+                    yaxis="y2",
+                ),
+                go.Scatter(
+                    x=ticker.iloc[:, 0],
+                    y=ticker["Slow EMA"],
+                    name="Slow EMA",
+                    yaxis="y2",
+                ),
+            ],
+            layout=go.Layout(
+                yaxis1=dict(
+                    autorange=True,
+                    titlefont=dict(color="#1f77b4"),
+                    tickfont=dict(color="#1f77b4"),
+                ),
+                yaxis2=dict(
+                    titlefont=dict(color="#ff7f0e"),
+                    tickfont=dict(color="#ff7f0e"),
+                    anchor="free",
+                    overlaying="y",
+                    side="right",
+                    position=1,
+                ),
+                showlegend=False,
+                xaxis_rangeslider_visible=False,
+                xaxis={"showticklabels": xaxis},
+                margin=go.layout.Margin(
+                    l=40,  # left margin
+                    r=40,  # right margin
+                    b=0,  # bottom margin
+                    t=0,  # top margin
+                ),
+            ),
+        ),
+        style={
+            "margin-top": "0px",
+            "height": "175px",
+            "padding-top": "0px",
+            "width": "100%",
+        },
+    )
+
+    return fig3
+
+
 @app.callback(
     [
         Output("ma_modal", "is_open", allow_duplicate=True),
         Output("bb_modal", "is_open", allow_duplicate=True),
+        Output("st_modal", "is_open", allow_duplicate=True),
+        Output("macd_modal", "is_open", allow_duplicate=True),
     ],
     Input("indicator_dropdown", "value"),
     prevent_initial_call=True,
@@ -253,55 +452,80 @@ def add_bollinger_bands(
 def show_indicator_modal(indicator_value):
 
     if indicator_value == "Moving average":
-        return True, False
+        return True, False, False, False
     elif indicator_value == "Bollinger Bands":
-        return False, True
+        return False, True, False, False
+    elif indicator_value == "Stochastic":
+        return False, False, True, False
+    elif indicator_value == "MACD":
+        return False, False, False, True
     else:
-        return False, False
+        return False, False, False, False
 
 
 @app.callback(
     [
         Output("indicator_dropdown", "value", allow_duplicate=True),
-        Output("ma_button", "children", allow_duplicate=True),
         Output("ma_button", "style", allow_duplicate=True),
         Output("ma_x_button", "style", allow_duplicate=True),
     ],
     Input("ma_ok", "n_clicks"),
-    State("ma_length", "value"),
     prevent_initial_call=True,
 )
-def draw_ma(n_clicks, ma_length):
+def draw_ma(n_clicks):
     if n_clicks != None:
-        ma_button = f"Moving average({ma_length})"
         n_clicks = None
-        return None, ma_button, {"display": "flex"}, {"display": "flex"}
+        return None, {"display": "flex"}, {"display": "flex"}
 
 
 @app.callback(
     [
-        Output("indicator_dropdown", "value"),
-        Output("bb_button", "children", allow_duplicate=True),
+        Output("indicator_dropdown", "value", allow_duplicate=True),
         Output("bb_button", "style", allow_duplicate=True),
         Output("bb_x_button", "style", allow_duplicate=True),
     ],
     Input("bb_ok", "n_clicks"),
-    State("bb_length", "value"),
-    State("bb_std", "value"),
     prevent_initial_call=True,
 )
-def draw_bb(n_clicks, bb_length, bb_std):
+def draw_bb(n_clicks):
     if n_clicks != None:
-        bb_button = f"Bollinger bands({bb_length, bb_std})"
         n_clicks = None
-        return None, bb_button, {"display": "flex"}, {"display": "flex"}
+        return None, {"display": "flex"}, {"display": "flex"}
+
+
+@app.callback(
+    [
+        Output("indicator_dropdown", "value", allow_duplicate=True),
+        Output("st_button", "style", allow_duplicate=True),
+        Output("st_x_button", "style", allow_duplicate=True),
+    ],
+    Input("st_ok", "n_clicks"),
+    prevent_initial_call=True,
+)
+def draw_st(n_clicks):
+    if n_clicks != None:
+        return None, {"display": "flex"}, {"display": "flex"}
+
+
+@app.callback(
+    [
+        Output("indicator_dropdown", "value", allow_duplicate=True),
+        Output("macd_button", "style", allow_duplicate=True),
+        Output("macd_x_button", "style", allow_duplicate=True),
+    ],
+    Input("macd_ok", "n_clicks"),
+    prevent_initial_call=True,
+)
+def draw_macd(n_clicks):
+    if n_clicks != None:
+        return None, {"display": "flex"}, {"display": "flex"}
 
 
 # BUTTON PART
 # Moving Average
 # Clicking button
 @app.callback(Output("ma_modal", "is_open"), Input("ma_button", "n_clicks"))
-def show_ma_modal_button(n_clicks):
+def show_ma_modal(n_clicks):
     if n_clicks != None:
         n_clicks = None
         return True
@@ -324,18 +548,23 @@ def update_indicator(n_clicks, indicator_length, indicator_name):
 
 # Deleting button
 @app.callback(
-    [Output("ma_button", "style"), Output("ma_x_button", "style"),],
+    [
+        Output("ma_button", "style"),
+        Output("ma_x_button", "style"),
+        Output("ma_ok", "n_clicks", allow_duplicate=True),
+    ],
     Input("ma_x_button", "n_clicks"),
+    prevent_initial_call=True,
 )
 def delete_ma_buttons(n_clicks):
     if n_clicks != None:
-        return {"display": "none"}, {"display": "none"}
+        return {"display": "none"}, {"display": "none"}, None
 
 
 # Bollinger Bands
 # Clicking button
 @app.callback(Output("bb_modal", "is_open"), Input("bb_button", "n_clicks"))
-def show_bb_modal_button(n_clicks):
+def show_bb_modal(n_clicks):
     if n_clicks != None:
         n_clicks = None
         return True
@@ -347,28 +576,132 @@ def show_bb_modal_button(n_clicks):
 @app.callback(
     [Output("bb_button", "n_clicks"), Output("bb_button", "children")],
     Input("bb_ok", "n_clicks"),
-    [State("bb_length", "value"), State("bb_button", "children")],
+    [
+        State("bb_length", "value"),
+        State("bb_std", "value"),
+        State("bb_button", "children"),
+    ],
 )
-def update_indicator(n_clicks, indicator_length, indicator_name):
+def update_indicator(n_clicks, indicator_length, indicator_std, indicator_name):
     if n_clicks != None:
-        button_value = f"{indicator_name[:15]}({indicator_length})"
+        button_value = f"{indicator_name[:15]}({indicator_length}, {indicator_std})"
         n_clicks = None
         return None, button_value
 
 
 # Deleting button
 @app.callback(
-    [Output("bb_button", "style"), Output("bb_x_button", "style"),],
+    [
+        Output("bb_button", "style"),
+        Output("bb_x_button", "style"),
+        Output("bb_ok", "n_clicks", allow_duplicate=True),
+    ],
     Input("bb_x_button", "n_clicks"),
+    prevent_initial_call=True,
 )
 def delete_bb_buttons(n_clicks):
     if n_clicks != None:
-        return {"display": "none"}, {"display": "none"}
+        return {"display": "none"}, {"display": "none"}, None
+
+
+# Stochistic
+# Clicking button
+@app.callback(Output("st_modal", "is_open"), Input("st_button", "n_clicks"))
+def show_st_modal(n_clicks):
+    if n_clicks != None:
+        n_clicks = None
+        return True
+    else:
+        return False
+
+
+# Confirming settings
+@app.callback(
+    [Output("st_button", "n_clicks"), Output("st_button", "children"),],
+    Input("st_ok", "n_clicks"),
+    [
+        State("st_length", "value"),
+        State("st_std", "value"),
+        State("st_button", "children"),
+    ],
+)
+def update_indicator(n_clicks, indicator_length, indicator_std, indicator_name):
+    if n_clicks != None:
+        button_value = f"{indicator_name[:10]}({indicator_length}, {indicator_std})"
+        n_clicks = None
+        return None, button_value
+
+
+# Deleting button
+@app.callback(
+    [
+        Output("st_button", "style"),
+        Output("st_x_button", "style"),
+        Output("stoch_container", "children", allow_duplicate=True),
+        Output("st_ok", "n_clicks", allow_duplicate=True),
+    ],
+    Input("st_x_button", "n_clicks"),
+    prevent_initial_call=True,
+)
+def delete_st(n_clicks):
+    if n_clicks != None:
+        n_clicks = None
+        return {"display": "none"}, {"display": "none"}, [], None
+
+
+# MACD
+# Clicking button
+@app.callback(Output("macd_modal", "is_open"), Input("macd_button", "n_clicks"))
+def show_macd_modal(n_clicks):
+    if n_clicks != None:
+        n_clicks = None
+        return True
+    else:
+        return False
+
+
+# Confirming settings
+@app.callback(
+    [Output("macd_button", "n_clicks"), Output("macd_button", "children"),],
+    Input("macd_ok", "n_clicks"),
+    [
+        State("macd_length", "value"),
+        State("macd_std", "value"),
+        State("macd_button", "children"),
+    ],
+)
+def update_indicator(n_clicks, indicator_length, indicator_std, indicator_name):
+    if n_clicks != None:
+        button_value = f"{indicator_name[:4]}({indicator_length}, {indicator_std})"
+        n_clicks = None
+        return None, button_value
+
+
+# Deleting button
+@app.callback(
+    [
+        Output("macd_button", "style"),
+        Output("macd_x_button", "style"),
+        Output("macd_container", "children", allow_duplicate=True),
+        Output("macd_ok", "n_clicks", allow_duplicate=True),
+    ],
+    Input("macd_x_button", "n_clicks"),
+    prevent_initial_call=True,
+)
+def delete_macd(n_clicks):
+    if n_clicks != None:
+        n_clicks = None
+        return {"display": "none"}, {"display": "none"}, [], None
 
 
 # UPDATING CHART
 @app.callback(
-    [Output("ticker_cndl_chart", "figure"), Output("error_alert", "is_open")],
+    [
+        Output("ticker_cndl_chart", "figure"),
+        Output("error_alert", "is_open"),
+        Output("stoch_container", "children", allow_duplicate=True),
+        Output("macd_container", "children", allow_duplicate=True),
+    ],
     [
         Input("input_ticker", "value"),
         Input("interval_dropdown", "value"),
@@ -376,10 +709,17 @@ def delete_bb_buttons(n_clicks):
         Input("date_picker", "end_date"),
         Input("ma_ok", "n_clicks"),
         Input("bb_ok", "n_clicks"),
+        Input("st_ok", "n_clicks"),
+        Input("macd_ok", "n_clicks"),
     ],
     State("ma_length", "value"),
     State("bb_length", "value"),
     State("bb_std", "value"),
+    State("st_length", "value"),
+    State("st_std", "value"),
+    State("macd_length", "value"),
+    State("macd_std", "value"),
+    prevent_initial_call=True,
 )
 def update_chart(
     ticker_value,
@@ -388,13 +728,21 @@ def update_chart(
     end_date,
     ma_ok,
     bb_ok,
+    st_ok,
+    macd_ok,
     ma_length,
     bb_length,
     bb_std,
+    st_length,
+    st_slowing,
+    fast_ema,
+    slow_ema,
 ):
+    stoch = []
+    macd = []
 
     if ticker_value is None or interval_value is None or start_date is None:
-        return go.Figure(), False
+        return go.Figure(), False, stoch
 
     ticker = yf.download(
         tickers=ticker_value,
@@ -406,7 +754,7 @@ def update_chart(
     )
 
     if ticker.empty:
-        return go.Figure(), True
+        return go.Figure(), True, stoch
 
     ticker = ticker.reset_index()
 
@@ -414,7 +762,7 @@ def update_chart(
     if length_df < 25:
         tick_indices = [i for i in range(0, length_df, 1)]
     else:
-        tick_indices = [i for i in range(0, length_df, length_df // 25)]
+        tick_indices = [i for i in range(0, length_df, length_df // 10)]
     tick_values = ticker.index[tick_indices]
 
     # Convert x-axis labels based on interval (date type)
@@ -449,7 +797,8 @@ def update_chart(
             start_date,
             end_date,
         )
-    if bb_ok:
+    # Add bollinger bands to the plot if selected
+    if bb_ok != None:
         add_bollinger_bands(
             bb_length,
             bb_std,
@@ -460,18 +809,66 @@ def update_chart(
             start_date,
             end_date,
         )
+    # Add stochastic to the plot if selected
+    if st_ok is not None:
+        stoch = add_stochastic(
+            st_length,
+            st_slowing,
+            ticker,
+            ticker_value,
+            interval_value,
+            start_date,
+            end_date,
+            macd_ok is None,
+        )
+    else:
+        stoch = []
+
+    print(f"equals to:{macd_ok}")
+    # Handle MACD if needed
+    if macd_ok is not None:
+        print("It is not None")
+        macd = add_macd(
+            fast_ema,
+            slow_ema,
+            ticker,
+            ticker_value,
+            interval_value,
+            start_date,
+            end_date,
+            True,
+        )
+    else:
+        macd = []
+
+    if st_ok != None or macd_ok != None:
+        xaxis = {"showticklabels": False}
+    else:
+        xaxis = {
+            "tickmode": "array",
+            "tickvals": tick_values,
+            "ticktext": ticktext,
+        }
 
     fig = go.Figure(
         data=fig_data,
         layout=go.Layout(
             title=ticker_value,
+            showlegend=False,
             yaxis={"autorange": True},
             xaxis_rangeslider_visible=False,
-            xaxis={"tickmode": "array", "tickvals": tick_values, "ticktext": ticktext,},
+            xaxis=xaxis,
+            margin=go.layout.Margin(
+                l=40,  # left margin
+                r=40,  # right margin
+                b=5,  # bottom margin
+                t=40,  # top margin
+            ),
         ),
     )
+    print(f"equals to:{macd_ok}")
 
-    return fig, False
+    return fig, False, stoch, macd
 
 
 if __name__ == "__main__":
