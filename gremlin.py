@@ -3,12 +3,16 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output, State, MATCH, ALLSMALLER, ALL
 from dash.exceptions import PreventUpdate
+from dash import dash_table
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
 import datetime
 from datetime import date, timedelta
 import yfinance as yf
+import yahooquery
+from yahooquery import Ticker
+from find_image import find_logo, find_flag, find_bg_color
 
 
 intervals = ["1d", "1m", "1mo", "1wk", "3mo", "5m", "15m", "30m", "60m", "90m"]
@@ -22,13 +26,20 @@ app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 
 def add_indicator_button(
-    indicator_short, indicator_name, length, std, s2_display, button_visible
+    indicator_short,
+    indicator_name,
+    param_2_name,
+    param_1_name,
+    param_1_value,
+    param_2_value,
+    s2_display,
+    button_visible,
 ):
 
     return html.Div(
         [
             dbc.Button(
-                f"{indicator_name}({length, std}",
+                f"{indicator_name}({param_1_value, param_2_value}",
                 id=f"{indicator_short}_button",
                 color="primary",
                 className="me-1",
@@ -46,17 +57,17 @@ def add_indicator_button(
                     dbc.ModalHeader(dbc.ModalTitle(indicator_name)),
                     dbc.ModalBody(
                         [
-                            dbc.Label("Length:"),
+                            dbc.Label(f"{param_1_name}:"),
                             dbc.Input(
-                                id=f"{indicator_short}_length",
+                                id=f"{indicator_short}_param1",
                                 type="number",
                                 disabled=False,
                             ),
                             dbc.Label(
-                                "Standard deviation:", style={"display": s2_display}
+                                f"{param_2_name}:", style={"display": s2_display}
                             ),
                             dbc.Input(
-                                id=f"{indicator_short}_std",
+                                id=f"{indicator_short}_param2",
                                 type="number",
                                 disabled=False,
                                 style={"display": s2_display},
@@ -77,104 +88,57 @@ def add_indicator_button(
 app.layout = html.Div(
     id="dynamic-container",
     children=[
-        html.H1("OHLC Analyzer Tool", style={"text-align": "center"}),
+        html.Div(
+            style={
+                "display": "flex",
+                "justify-content": "space-between",
+                "align-items": "center",
+            },
+            children=[
+                html.H1(
+                    "OHLC Analyzer Tool",
+                    style={"text-align": "center", "color": "white", "margin": "auto",},
+                ),
+                html.Button(
+                    "OFF",
+                    id="toggle-switch",
+                    n_clicks=0,
+                    style={"margin-right": "10px"},
+                ),
+            ],
+        ),
         html.P(
             "This is a tool that helps to analyze OHLC data.",
-            style={"text-align": "center"},
+            style={"text-align": "center", "color": "white"},
         ),
         html.Div(
             dcc.Input(
                 id="input_ticker".format("search"),
                 type="search",
                 placeholder="Search ticker".format("search"),
-                style={"width": "230px"},
+                style={
+                    "width": "230px",
+                    "background-color": "#5D5D5D",
+                    "color": "gray",
+                },
             ),
             style={"display": "flex", "justify-content": "center"},
         ),
-        html.Div(
-            dcc.Dropdown(
-                options=[{"label": i, "value": i} for i in intervals],
-                id="interval_dropdown",
-                placeholder="Select interval",
-                style={"width": "230px", "margin-top": "10px"},
-            ),
-            style={"display": "flex", "justify-content": "center"},
-        ),
-        html.Div(
-            dcc.DatePickerRange(
-                id="date_picker",
-                min_date_allowed=date(1900, 1, 1,),
-                max_date_allowed=date(
-                    today_date.year, today_date.month, today_date.day
-                ),
-                initial_visible_month=date(week_ago.year, week_ago.month, week_ago.day),
-                end_date=date(today_date.year, today_date.month, today_date.day),
-                style={"margin-top": "10px"},
-            ),
-            style={"display": "flex", "justify-content": "center"},
-        ),
-        html.Div(
-            dbc.Alert(
-                "Invalid ticker or data range. Please be aware that for shorter intervals, only the data from the past 7 days is available.",
-                id="error_alert",
-                color="danger",
-                dismissable=True,
-                is_open=False,
-                duration=4500,
-            ),
-            style={"display": "flex", "justify-content": "center"},
-        ),
-        dcc.Dropdown(
-            options=[{"label": i, "value": i} for i in indicators],
-            id="indicator_dropdown",
-            placeholder="Select indicator",
-            style={"width": "230px", "margin-top": "10px"},
-        ),
-        html.Div(
-            id="modals",
+        html.Div(id="short_info_container", children=[],),
+        dcc.Tabs(
+            id="main_tabs",
+            value="summary_tab",
             children=[
-                add_indicator_button("ma", "Moving average", 0, 0, "none", "none"),
-                add_indicator_button("bb", "Bollinger Bands", 0, 0, "display", "none"),
-                add_indicator_button("st", "Stochastic", 0, 0, "display", "none"),
-                add_indicator_button("macd", "MACD", 0, 0, "display", "none"),
+                dcc.Tab(label="Summary", value="summary_tab"),
+                dcc.Tab(label="Chart", value="main_chart_tab"),
+                dcc.Tab(label="Financials", value="financials_tab"),
+                dcc.Tab(label="Statistics", value="statistics_tab"),
             ],
+            style={"width": "700px", "display": "flex", "justify-content": "center"},
         ),
-        dcc.Graph(
-            id="ticker_cndl_chart",
-            figure=go.Figure(
-                data=[
-                    go.Candlestick(
-                        x=ticker.iloc[:, 0],
-                        open=ticker["Open"],
-                        high=ticker["High"],
-                        low=ticker["Low"],
-                        close=ticker["Close"],
-                    )
-                ],
-                layout=go.Layout(
-                    title="Chart",
-                    showlegend=False,
-                    yaxis={"autorange": True},
-                    xaxis_rangeslider_visible=False,
-                    margin=go.layout.Margin(
-                        l=40,  # left margin
-                        r=40,  # right margin
-                        b=5,  # bottom margin
-                        t=40,  # top margin
-                    ),
-                ),
-            ),
-            style={
-                "margin_bottom": "0px",
-                "padding-bottom": "0px",
-                "height": "550px",
-                "width": "100%",
-            },
-            className="h-5",
-        ),
-        html.Div(id="stoch_container", children=[],),
-        html.Div(id="macd_container", children=[],),
+        html.Div(id="tabs_content"),
     ],
+    style={"backgroundColor": "#211F32", "height": "100vh"},
 )
 
 
@@ -310,15 +274,25 @@ def add_stochastic(
                 ],
                 layout=go.Layout(
                     showlegend=False,
-                    yaxis={"autorange": True},
+                    yaxis=dict(
+                        autorange=True,
+                        titlefont=dict(color="grey"),
+                        tickfont=dict(color="grey"),
+                    ),
                     xaxis_rangeslider_visible=False,
-                    xaxis={"showticklabels": xaxis},
+                    xaxis=dict(
+                        showticklabels=xaxis,
+                        autorange=True,
+                        titlefont=dict(color="grey"),
+                        tickfont=dict(color="grey"),
+                    ),
                     margin=go.layout.Margin(
                         l=40,  # left margin
                         r=40,  # right margin
                         b=5,  # bottom margin
                         t=0,  # top margin
                     ),
+                    paper_bgcolor="#211F32",
                 ),
             ),
             style={
@@ -406,12 +380,12 @@ def add_macd(
             layout=go.Layout(
                 yaxis1=dict(
                     autorange=True,
-                    titlefont=dict(color="#1f77b4"),
-                    tickfont=dict(color="#1f77b4"),
+                    titlefont=dict(color="gray"),
+                    tickfont=dict(color="gray"),
                 ),
                 yaxis2=dict(
-                    titlefont=dict(color="#ff7f0e"),
-                    tickfont=dict(color="#ff7f0e"),
+                    titlefont=dict(color="gray"),
+                    tickfont=dict(color="gray"),
                     anchor="free",
                     overlaying="y",
                     side="right",
@@ -423,9 +397,10 @@ def add_macd(
                 margin=go.layout.Margin(
                     l=40,  # left margin
                     r=40,  # right margin
-                    b=0,  # bottom margin
+                    b=5,  # bottom margin
                     t=0,  # top margin
                 ),
+                paper_bgcolor="#211F32",
             ),
         ),
         style={
@@ -537,11 +512,11 @@ def show_ma_modal(n_clicks):
 @app.callback(
     [Output("ma_button", "n_clicks"), Output("ma_button", "children")],
     Input("ma_ok", "n_clicks"),
-    [State("ma_length", "value"), State("ma_button", "children")],
+    [State("ma_param1", "value"), State("ma_button", "children")],
 )
-def update_indicator(n_clicks, indicator_length, indicator_name):
+def update_indicator(n_clicks, indicator_param1, indicator_name):
     if n_clicks != None:
-        button_value = f"{indicator_name[:14]}({indicator_length})"
+        button_value = f"{indicator_name[:14]}({indicator_param1})"
         n_clicks = None
         return None, button_value
 
@@ -577,14 +552,14 @@ def show_bb_modal(n_clicks):
     [Output("bb_button", "n_clicks"), Output("bb_button", "children")],
     Input("bb_ok", "n_clicks"),
     [
-        State("bb_length", "value"),
-        State("bb_std", "value"),
+        State("bb_param1", "value"),
+        State("bb_param2", "value"),
         State("bb_button", "children"),
     ],
 )
-def update_indicator(n_clicks, indicator_length, indicator_std, indicator_name):
+def update_indicator(n_clicks, indicator_param1, indicator_param2, indicator_name):
     if n_clicks != None:
-        button_value = f"{indicator_name[:15]}({indicator_length}, {indicator_std})"
+        button_value = f"{indicator_name[:15]}({indicator_param1}, {indicator_param2})"
         n_clicks = None
         return None, button_value
 
@@ -620,14 +595,14 @@ def show_st_modal(n_clicks):
     [Output("st_button", "n_clicks"), Output("st_button", "children"),],
     Input("st_ok", "n_clicks"),
     [
-        State("st_length", "value"),
-        State("st_std", "value"),
+        State("st_param1", "value"),
+        State("st_param2", "value"),
         State("st_button", "children"),
     ],
 )
-def update_indicator(n_clicks, indicator_length, indicator_std, indicator_name):
+def update_indicator(n_clicks, indicator_param1, indicator_param2, indicator_name):
     if n_clicks != None:
-        button_value = f"{indicator_name[:10]}({indicator_length}, {indicator_std})"
+        button_value = f"{indicator_name[:10]}({indicator_param1}, {indicator_param2})"
         n_clicks = None
         return None, button_value
 
@@ -665,14 +640,14 @@ def show_macd_modal(n_clicks):
     [Output("macd_button", "n_clicks"), Output("macd_button", "children"),],
     Input("macd_ok", "n_clicks"),
     [
-        State("macd_length", "value"),
-        State("macd_std", "value"),
+        State("macd_param1", "value"),
+        State("macd_param2", "value"),
         State("macd_button", "children"),
     ],
 )
-def update_indicator(n_clicks, indicator_length, indicator_std, indicator_name):
+def update_indicator(n_clicks, indicator_param1, indicator_param2, indicator_name):
     if n_clicks != None:
-        button_value = f"{indicator_name[:4]}({indicator_length}, {indicator_std})"
+        button_value = f"{indicator_name[:4]}({indicator_param1}, {indicator_param2})"
         n_clicks = None
         return None, button_value
 
@@ -694,6 +669,217 @@ def delete_macd(n_clicks):
         return {"display": "none"}, {"display": "none"}, [], None
 
 
+# TABS
+@app.callback(Output("tabs_content", "children"), Input("main_tabs", "value"))
+def render_tab(tab):
+    if tab == "summary_tab":
+        pass
+    elif tab == "main_chart_tab":
+        return html.Div(
+            id="tab_1_container",
+            children=[
+                html.Div(
+                    dcc.Dropdown(
+                        options=[{"label": i, "value": i} for i in intervals],
+                        id="interval_dropdown",
+                        placeholder="Select interval",
+                        style={
+                            "width": "230px",
+                            "background-color": "#5D5D5D",
+                            "color": "gray",
+                        },
+                    ),
+                    style={
+                        "display": "flex",
+                        "justify-content": "center",
+                        "margin-top": "10px",
+                    },
+                ),
+                html.Div(
+                    dcc.DatePickerRange(
+                        id="date_picker",
+                        min_date_allowed=date(1900, 1, 1,),
+                        max_date_allowed=date(
+                            today_date.year, today_date.month, today_date.day
+                        ),
+                        initial_visible_month=date(
+                            week_ago.year, week_ago.month, week_ago.day
+                        ),
+                        end_date=date(
+                            today_date.year, today_date.month, today_date.day
+                        ),
+                        style={
+                            "margin-top": "10px",
+                            "background-color": "#5D5D5D",
+                            "color": "gray",
+                            "border-color": "green",
+                        },
+                    ),
+                    style={"display": "flex", "justify-content": "center"},
+                ),
+                html.Div(
+                    dbc.Alert(
+                        "Invalid ticker or data range. Please be aware that for shorter intervals, only the data from the past 7 days is available.",
+                        id="error_alert",
+                        color="danger",
+                        dismissable=True,
+                        is_open=False,
+                        duration=4500,
+                    ),
+                    style={"display": "flex", "justify-content": "center"},
+                ),
+                dcc.Dropdown(
+                    options=[{"label": i, "value": i} for i in indicators],
+                    id="indicator_dropdown",
+                    placeholder="Select indicator",
+                    style={
+                        "width": "230px",
+                        "margin-top": "10px",
+                        "background-color": "#5D5D5D",
+                        "color": "gray",
+                    },
+                ),
+                html.Div(
+                    id="modals",
+                    children=[
+                        add_indicator_button(
+                            "ma", "Moving average", "Length", "", 0, 0, "none", "none"
+                        ),
+                        add_indicator_button(
+                            "bb",
+                            "Bollinger Bands",
+                            "Period",
+                            "Standard deviation",
+                            0,
+                            0,
+                            "display",
+                            "none",
+                        ),
+                        add_indicator_button(
+                            "st",
+                            "Stochastic",
+                            "%K period",
+                            "Slowing",
+                            0,
+                            0,
+                            "display",
+                            "none",
+                        ),
+                        add_indicator_button(
+                            "macd",
+                            "MACD",
+                            "Fast EMA",
+                            "Slow EMA",
+                            0,
+                            0,
+                            "display",
+                            "none",
+                        ),
+                    ],
+                ),
+                dcc.Graph(
+                    id="ticker_cndl_chart",
+                    figure=go.Figure(
+                        data=[
+                            go.Candlestick(
+                                x=ticker.iloc[:, 0],
+                                open=ticker["Open"],
+                                high=ticker["High"],
+                                low=ticker["Low"],
+                                close=ticker["Close"],
+                            )
+                        ],
+                        layout=go.Layout(
+                            title="Chart",
+                            titlefont=dict(color="grey"),
+                            showlegend=False,
+                            yaxis=dict(
+                                autorange=True,
+                                titlefont=dict(color="grey"),
+                                tickfont=dict(color="grey"),
+                            ),
+                            xaxis_rangeslider_visible=False,
+                            xaxis=dict(
+                                autorange=True,
+                                titlefont=dict(color="grey"),
+                                tickfont=dict(color="grey"),
+                            ),
+                            margin=go.layout.Margin(
+                                l=40,  # left margin
+                                r=40,  # right margin
+                                b=5,  # bottom margin
+                                t=40,  # top margin
+                            ),
+                            paper_bgcolor="rgba(0,0,0,0)",
+                        ),
+                    ),
+                    style={
+                        "margin_bottom": "0px",
+                        "padding-bottom": "0px",
+                        "height": "550px",
+                        "width": "100%",
+                        "overflow": "hidden",
+                        "background-color": "#211F32",
+                    },
+                    className="h-5",
+                ),
+                html.Div(id="stoch_container", children=[],),
+                html.Div(id="macd_container", children=[],),
+            ],
+        )
+    elif tab == "financials_tab":
+        return html.Div(
+            children=[
+                html.Div(
+                    children=[
+                        dcc.Tabs(
+                            id="financials_tab",
+                            value="income_stmt_tab",
+                            children=[
+                                dcc.Tab(
+                                    label="Income statement", value="income_stmt_tab"
+                                ),
+                                dcc.Tab(
+                                    label="Balance sheet", value="balance_sheet_tab"
+                                ),
+                                dcc.Tab(label="Cash flow", value="cash_flow_tab"),
+                            ],
+                            style={
+                                "width": "700px",
+                                "display": "flex",
+                                "justify-content": "center",
+                            },
+                        ),
+                        dcc.Tabs(
+                            id="qora_tabs",
+                            value="annual_tab",
+                            children=[
+                                dcc.Tab(label="Annual", value="annual_tab"),
+                                dcc.Tab(label="Quarterly", value="quarterly_tab"),
+                            ],
+                            style={
+                                "width": "700px",
+                                "display": "flex",
+                                "justify-content": "center",
+                            },
+                        ),
+                    ]
+                ),
+                html.Div(
+                    id="financials_container",
+                    children=[],
+                    style={"backgroundColor": "#211F32"},
+                ),
+            ]
+        )
+    elif tab == "statistics_tab":
+        return html.Div(
+            id="statistics_container",
+            children=[],
+            style={"backgroundColor": "#211F32"},
+        )
+
+
 # UPDATING CHART
 @app.callback(
     [
@@ -712,13 +898,13 @@ def delete_macd(n_clicks):
         Input("st_ok", "n_clicks"),
         Input("macd_ok", "n_clicks"),
     ],
-    State("ma_length", "value"),
-    State("bb_length", "value"),
-    State("bb_std", "value"),
-    State("st_length", "value"),
-    State("st_std", "value"),
-    State("macd_length", "value"),
-    State("macd_std", "value"),
+    State("ma_param1", "value"),
+    State("bb_param1", "value"),
+    State("bb_param2", "value"),
+    State("st_param1", "value"),
+    State("st_param2", "value"),
+    State("macd_param1", "value"),
+    State("macd_param2", "value"),
     prevent_initial_call=True,
 )
 def update_chart(
@@ -824,10 +1010,8 @@ def update_chart(
     else:
         stoch = []
 
-    print(f"equals to:{macd_ok}")
     # Handle MACD if needed
     if macd_ok is not None:
-        print("It is not None")
         macd = add_macd(
             fast_ema,
             slow_ema,
@@ -855,7 +1039,12 @@ def update_chart(
         layout=go.Layout(
             title=ticker_value,
             showlegend=False,
-            yaxis={"autorange": True},
+            titlefont=dict(color="grey"),
+            yaxis=dict(
+                autorange=True,
+                titlefont=dict(color="grey"),
+                tickfont=dict(color="grey"),
+            ),
             xaxis_rangeslider_visible=False,
             xaxis=xaxis,
             margin=go.layout.Margin(
@@ -864,11 +1053,239 @@ def update_chart(
                 b=5,  # bottom margin
                 t=40,  # top margin
             ),
+            paper_bgcolor="rgba(0,0,0,0)",
         ),
     )
-    print(f"equals to:{macd_ok}")
 
     return fig, False, stoch, macd
+
+
+@app.callback(
+    Output("short_info_container", "children"), Input("input_ticker", "value")
+)
+def show_info(ticker_text):
+    if ticker_text == "":
+        return html.H1(
+            "", style={"text-align": "center", "color": "white", "margin": "auto"}
+        )
+    elif ticker_text is not None:
+
+        ticker = yf.Ticker(ticker_text)
+        ticker_yq = Ticker(ticker_text)
+
+        name = ticker.info["shortName"]
+        currency = ticker.info["currency"]
+        logo_url = find_logo(ticker_text)
+        logo_bg_color = find_bg_color(logo_url)
+        if logo_bg_color[0] != "#":
+            logo_bg_color = "#181818"  # Default TradingView black bg_color
+        print(logo_bg_color)
+        industry = ticker.info["industry"]
+        country = ticker.info["country"]
+        flag = find_flag(country)
+        exchange = ticker_yq.price[ticker_text]["exchangeName"]
+        history = ticker.history(period="1m")
+        last_price = round(history["Close"].iloc[-1], 2)
+        prev_close = round(ticker.info["previousClose"], 2)
+        change = round(last_price - prev_close, 2)
+        if change >= 0:
+            change = f"+{change}"
+            perc_change = f"+{round(((last_price - prev_close) / prev_close * 100),2)}%"
+            font_color = "#00b51a"
+        else:
+            change = f"{change}"
+            perc_change = f"{round(((last_price - prev_close) / prev_close * 100),2)}%"
+            font_color = "#ff2d21"
+
+        return html.Div(
+            className="row justify-content-center",
+            children=[
+                html.H1(
+                    name,
+                    style={"text-align": "center", "color": "white", "margin": "auto"},
+                ),
+                html.Img(
+                    src=f"{flag}",
+                    alt="image",
+                    style={"width": "90px", "height": "60px"},
+                ),
+                html.Img(
+                    src=f"{logo_url}",
+                    alt="image",
+                    style={
+                        "width": "80px",
+                        "height": "80px",
+                        "border-radius": "10px",
+                        "border": "2px solid white",
+                        "object-fit": "none",
+                        "object-position": "center",
+                        "background-color": logo_bg_color,
+                    },
+                ),
+                html.Div(
+                    children=[
+                        html.H1(
+                            f"{last_price} {currency}",
+                            style={
+                                "text-align": "center",
+                                "color": "white",
+                                "margin": "auto",
+                            },
+                        ),
+                        html.H5(
+                            change,
+                            style={
+                                "text-align": "center",
+                                "color": font_color,
+                                "margin": "auto",
+                            },
+                        ),
+                        html.H5(
+                            perc_change,
+                            style={
+                                "text-align": "center",
+                                "color": font_color,
+                                "margin": "auto",
+                            },
+                        ),
+                    ]
+                ),
+                html.H5(
+                    industry,
+                    style={"text-align": "center", "color": "white", "margin": "auto"},
+                ),
+                html.H5(
+                    exchange,
+                    style={"text-align": "center", "color": "white", "margin": "auto"},
+                ),
+            ],
+        )
+
+
+@app.callback(
+    Output("financials_container", "children"),
+    [
+        Input("input_ticker", "value"),
+        Input("main_tabs", "value"),
+        Input("financials_tab", "value"),
+        Input("qora_tabs", "value"),
+    ],
+)
+def update_financials(ticker_text, tab1, tab2, tab3):
+    if tab1 == "financials_tab":
+        ticker = Ticker(ticker_text)
+        if tab3 == "annual_tab":
+            frequency = "a"
+        elif tab3 == "quarterly_tab":
+            frequency = "q"
+        if tab2 == "balance_sheet_tab":
+            table_data = ticker.balance_sheet(frequency)
+        elif tab2 == "income_stmt_tab":
+            table_data = ticker.income_statement(frequency)
+        elif tab2 == "cash_flow_tab":
+            table_data = ticker.cash_flow(frequency)
+
+        table_data = table_data.transpose()
+        table_data.reset_index(inplace=True)
+        table_data.columns = range(table_data.shape[1])
+
+        # columns = []  # Start with index column
+        # for column in table_data.columns:
+        #     columns.append({"name": column, "id": column})
+
+        initial_active_cell = {"row": 11, "column": 0, "column_id": "0", "row_id": 11}
+
+        table = dash_table.DataTable(
+            id="financials_table",
+            data=table_data.to_dict("records"),
+            active_cell=initial_active_cell,
+            style_table={
+                "maxWidth": "700px",
+                "marginLeft": "auto",
+                "marginRight": "auto",
+            },  # Center the table horizontally
+            style_cell={
+                "whiteSpace": "normal",
+                "textAlign": "center",
+                "color": "white",
+                "backgroundColor": "#211F32",
+            },
+            style_header={"fontWeight": "bold"},
+        )
+
+        return html.Div(
+            children=[html.Div(id="graph_container", children=[]), table],
+            style={"text-align": "center", "backgroundColor": "#211F32"},
+        )
+
+
+@app.callback(
+    Output("graph_container", "children"),
+    Input("financials_table", "active_cell"),
+    State("financials_table", "data"),
+)
+def cell_clicked(active_cell, table):
+
+    if active_cell is None:
+        return None
+
+    row = active_cell["row"]
+    value = table[row]["0"]
+    x_data = [table[0]["1"], table[0]["2"], table[0]["3"], table[0]["4"]]
+    y_data = [table[row]["1"], table[row]["2"], table[row]["3"], table[row]["4"]]
+
+    figson = dcc.Graph(
+        id="bar-chart",
+        figure={
+            "data": [{"x": x_data, "y": y_data, "type": "bar"}],
+            "layout": {
+                "title": value,
+                "xaxis": {"title": "Categories"},
+                "yaxis": {"title": "Values"},
+            },
+        },
+        style={
+            "width": "600px",
+            "height": "350px",
+            "display": "flex",
+            "margin": "0 auto",
+            "justify-content": "center",
+        },
+    )
+
+    return figson
+
+
+@app.callback(
+    Output("statistics_container", "children"),
+    [Input("input_ticker", "value"), Input("main_tabs", "value"),],
+)
+def update_financials(ticker_text, tab):
+    if tab == "statistics_tab":
+        ticker = Ticker(ticker_text)
+
+        table_data = ticker.calendar_events
+        table_data.reset_index(inplace=True)
+        # table_data = table_data.drop(table_data.columns[2], axis=1)
+
+        table = dash_table.DataTable(
+            id="statistics_table",
+            data=table_data.to_dict("records"),
+            style_table={
+                "maxWidth": "700px",
+                "marginLeft": "auto",
+                "marginRight": "auto",
+            },  # Center the table horizontally
+            style_cell={
+                "whiteSpace": "normal",
+                "textAlign": "center",
+                "color": "white",
+                "backgroundColor": "#211F32",
+            },
+            style_header={"fontWeight": "bold"},
+        )
+
+        return table
 
 
 if __name__ == "__main__":
