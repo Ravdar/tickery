@@ -12,7 +12,15 @@ from datetime import date, timedelta
 import yfinance as yf
 import yahooquery
 from yahooquery import Ticker
-from find_image import find_logo, find_flag, find_bg_color
+from find_image import find_logo
+import radar_ratings
+from radar_ratings import (
+    value_rating,
+    debt_rating,
+    stability_rating,
+    dividend_rating,
+    future_rating,
+)
 
 
 intervals = ["1d", "1m", "1mo", "1wk", "3mo", "5m", "15m", "30m", "60m", "90m"]
@@ -22,7 +30,7 @@ today_date = pd.Timestamp.now()
 week_ago = pd.to_datetime(datetime.datetime.now() - timedelta(weeks=1))
 colors = {"background": "#111111", "text": "#7FDBFF"}
 
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP, "assets/styles.css"])
 
 
 def add_indicator_button(
@@ -37,20 +45,20 @@ def add_indicator_button(
 ):
 
     return html.Div(
-        [
+        children=[
             dbc.Button(
                 f"{indicator_name}({param_1_value, param_2_value}",
                 id=f"{indicator_short}_button",
                 color="primary",
                 className="me-1",
-                style={"display": button_visible},
+                style={"display": button_visible,},
             ),
             dbc.Button(
                 "X",
                 id=f"{indicator_short}_x_button",
                 color="primary",
                 className="me-1",
-                style={"display": button_visible},
+                style={"display": button_visible,},
             ),
             dbc.Modal(
                 [
@@ -80,7 +88,16 @@ def add_indicator_button(
                 ],
                 id=f"{indicator_short}_modal",
             ),
-        ]
+        ],
+        style={
+            "display": "flex",
+            "justify-content": "flex-start",
+            "margin-top": "10px",
+            "background-color": "#211F32",
+            "align-items": "center",
+            "gap": "0px",
+            "margin-bottom": "0px",
+        },
     )
 
 
@@ -96,49 +113,66 @@ app.layout = html.Div(
             },
             children=[
                 html.H1(
-                    "OHLC Analyzer Tool",
-                    style={"text-align": "center", "color": "white", "margin": "auto",},
-                ),
-                html.Button(
-                    "OFF",
-                    id="toggle-switch",
-                    n_clicks=0,
-                    style={"margin-right": "10px"},
+                    "GremlinGains",
+                    style={
+                        "text-align": "center",
+                        "color": "white",
+                        "margin": "30px auto 0",
+                    },
                 ),
             ],
         ),
-        html.P(
-            "This is a tool that helps to analyze OHLC data.",
-            style={"text-align": "center", "color": "white"},
-        ),
+        html.P("Hunt your profits", style={"text-align": "center", "color": "white"},),
         html.Div(
             dcc.Input(
                 id="input_ticker".format("search"),
                 type="search",
                 placeholder="Search ticker".format("search"),
                 style={
-                    "width": "230px",
-                    "background-color": "#5D5D5D",
-                    "color": "gray",
+                    "width": "350px",
+                    "height": "45px",
+                    "background-color": "white",
+                    "color": "#211F32",
+                    "margin-bottom": "15px",
+                    "text-align": "center",
+                    "borderRadius": "30px",
                 },
             ),
-            style={"display": "flex", "justify-content": "center"},
+            style={"display": "flex", "justify-content": "center",},
         ),
         html.Div(id="short_info_container", children=[],),
-        dcc.Tabs(
-            id="main_tabs",
-            value="summary_tab",
+        html.Div(
+            id="tabs_container",
+            style={"display": "flex", "justify-content": "center",},
             children=[
-                dcc.Tab(label="Summary", value="summary_tab"),
-                dcc.Tab(label="Chart", value="main_chart_tab"),
-                dcc.Tab(label="Financials", value="financials_tab"),
-                dcc.Tab(label="Statistics", value="statistics_tab"),
+                dcc.Tabs(
+                    id="main_tabs",
+                    value="summary_tab",
+                    children=[
+                        dcc.Tab(label="Summary", value="summary_tab",),
+                        dcc.Tab(label="Chart", value="main_chart_tab"),
+                        dcc.Tab(label="Financials", value="financials_tab"),
+                        dcc.Tab(label="Statistics", value="statistics_tab"),
+                    ],
+                    style={"display": "none", "width": "700px",},
+                )
             ],
-            style={"width": "700px", "display": "flex", "justify-content": "center"},
+        ),
+        html.H5(
+            "Nothing is here yet, type stock ticker to start",
+            style={
+                "color": "white",
+                "margin-top": "150px",
+                "display": "flex",
+                "justify-content": "center",
+                "font-size": "60px",
+                "text-align": "center",
+            },
+            id="welcome_message",
         ),
         html.Div(id="tabs_content"),
     ],
-    style={"backgroundColor": "#211F32", "height": "100vh"},
+    style={"backgroundColor": "#211F32", "height": "100vh", "margin": "0"},
 )
 
 
@@ -450,7 +484,23 @@ def show_indicator_modal(indicator_value):
 def draw_ma(n_clicks):
     if n_clicks != None:
         n_clicks = None
-        return None, {"display": "flex"}, {"display": "flex"}
+        return (
+            None,
+            {
+                "display": "flex",
+                "margin-right": "0px",
+                "padding": "5px",
+                "background-color": "#211F32",
+                "font-size": "12px",
+            },
+            {
+                "display": "flex",
+                "margin-left": "0px",
+                "padding": "5px",
+                "background-color": "#211F32",
+                "font-size": "12px",
+            },
+        )
 
 
 @app.callback(
@@ -465,7 +515,23 @@ def draw_ma(n_clicks):
 def draw_bb(n_clicks):
     if n_clicks != None:
         n_clicks = None
-        return None, {"display": "flex"}, {"display": "flex"}
+        return (
+            None,
+            {
+                "display": "flex",
+                "margin-right": "0px",
+                "padding": "5px",
+                "background-color": "#211F32",
+                "font-size": "12px",
+            },
+            {
+                "display": "flex",
+                "margin-left": "0px",
+                "padding": "5px",
+                "background-color": "#211F32",
+                "font-size": "12px",
+            },
+        )
 
 
 @app.callback(
@@ -479,7 +545,23 @@ def draw_bb(n_clicks):
 )
 def draw_st(n_clicks):
     if n_clicks != None:
-        return None, {"display": "flex"}, {"display": "flex"}
+        return (
+            None,
+            {
+                "display": "flex",
+                "margin-right": "0px",
+                "padding": "5px",
+                "background-color": "#211F32",
+                "font-size": "12px",
+            },
+            {
+                "display": "flex",
+                "margin-left": "0px",
+                "padding": "5px",
+                "background-color": "#211F32",
+                "font-size": "12px",
+            },
+        )
 
 
 @app.callback(
@@ -493,7 +575,23 @@ def draw_st(n_clicks):
 )
 def draw_macd(n_clicks):
     if n_clicks != None:
-        return None, {"display": "flex"}, {"display": "flex"}
+        return (
+            None,
+            {
+                "display": "flex",
+                "margin-right": "0px",
+                "padding": "5px",
+                "background-color": "#211F32",
+                "font-size": "12px",
+            },
+            {
+                "display": "flex",
+                "margin-left": "0px",
+                "padding": "5px",
+                "background-color": "#211F32",
+                "font-size": "12px",
+            },
+        )
 
 
 # BUTTON PART
@@ -673,70 +771,101 @@ def delete_macd(n_clicks):
 @app.callback(Output("tabs_content", "children"), Input("main_tabs", "value"))
 def render_tab(tab):
     if tab == "summary_tab":
-        pass
+        return html.Div(
+            id="summary_container",
+            children=[],
+            style={"margin-left": "300px", "margin-right": "300px",},
+        )
     elif tab == "main_chart_tab":
         return html.Div(
             id="tab_1_container",
             children=[
                 html.Div(
-                    dcc.Dropdown(
-                        options=[{"label": i, "value": i} for i in intervals],
-                        id="interval_dropdown",
-                        placeholder="Select interval",
-                        style={
-                            "width": "230px",
-                            "background-color": "#5D5D5D",
-                            "color": "gray",
-                        },
-                    ),
+                    children=[
+                        dcc.Dropdown(
+                            options=[{"label": i, "value": i} for i in intervals],
+                            id="interval_dropdown",
+                            placeholder="Interval",
+                            style={
+                                "width": "230px",
+                                "background-color": "#211F32",
+                                "width": "140px",
+                            },
+                            className="dropdown-custom",
+                        ),
+                        dcc.Dropdown(
+                            options=[{"label": i, "value": i} for i in indicators],
+                            id="indicator_dropdown",
+                            placeholder="Indicators",
+                            style={
+                                "width": "230px",
+                                "background-color": "#211F32",
+                                "width": "140px",
+                            },
+                            className="dropdown-custom",
+                        ),
+                        dcc.DatePickerRange(
+                            id="date_picker",
+                            min_date_allowed=date(1900, 1, 1,),
+                            max_date_allowed=date(
+                                today_date.year, today_date.month, today_date.day
+                            ),
+                            initial_visible_month=date(
+                                week_ago.year, week_ago.month, week_ago.day
+                            ),
+                            end_date=date(
+                                today_date.year, today_date.month, today_date.day
+                            ),
+                            style={"background-color": "#211F32", "padding": "0px"},
+                        ),
+                        dcc.Dropdown(
+                            options=[
+                                {"label": "Linear", "value": "linear"},
+                                {"label": "Logarithmic", "value": "logarithmic"},
+                            ],
+                            id="scale_dropdown",
+                            placeholder="Scale",
+                            value="linear",
+                            style={
+                                "width": "230px",
+                                "background-color": "#211F32",
+                                "width": "140px",
+                            },
+                            className="dropdown-custom",
+                        ),
+                        dcc.Dropdown(
+                            options=[
+                                {"label": "Candlesticks", "value": "candlesticks"},
+                                {"label": "Bars", "value": "bars"},
+                                {"label": "Linear", "value": "linear"},
+                            ],
+                            id="type_dropdown",
+                            placeholder="Type",
+                            value="candlesticks",
+                            style={
+                                "width": "230px",
+                                "background-color": "#211F32",
+                                "width": "140px",
+                            },
+                            className="dropdown-custom",
+                        ),
+                        html.Div(
+                            dbc.Alert(
+                                "Invalid ticker or data range. Please be aware that for shorter intervals, only the data from the past 7 days is available.",
+                                id="error_alert",
+                                color="danger",
+                                dismissable=True,
+                                is_open=False,
+                                duration=4500,
+                            ),
+                            style={"display": "flex", "justify-content": "center"},
+                        ),
+                    ],
                     style={
                         "display": "flex",
                         "justify-content": "center",
                         "margin-top": "10px",
-                    },
-                ),
-                html.Div(
-                    dcc.DatePickerRange(
-                        id="date_picker",
-                        min_date_allowed=date(1900, 1, 1,),
-                        max_date_allowed=date(
-                            today_date.year, today_date.month, today_date.day
-                        ),
-                        initial_visible_month=date(
-                            week_ago.year, week_ago.month, week_ago.day
-                        ),
-                        end_date=date(
-                            today_date.year, today_date.month, today_date.day
-                        ),
-                        style={
-                            "margin-top": "10px",
-                            "background-color": "#5D5D5D",
-                            "color": "gray",
-                            "border-color": "green",
-                        },
-                    ),
-                    style={"display": "flex", "justify-content": "center"},
-                ),
-                html.Div(
-                    dbc.Alert(
-                        "Invalid ticker or data range. Please be aware that for shorter intervals, only the data from the past 7 days is available.",
-                        id="error_alert",
-                        color="danger",
-                        dismissable=True,
-                        is_open=False,
-                        duration=4500,
-                    ),
-                    style={"display": "flex", "justify-content": "center"},
-                ),
-                dcc.Dropdown(
-                    options=[{"label": i, "value": i} for i in indicators],
-                    id="indicator_dropdown",
-                    placeholder="Select indicator",
-                    style={
-                        "width": "230px",
-                        "margin-top": "10px",
-                        "background-color": "#5D5D5D",
-                        "color": "gray",
+                        "background-color": "#211F32",
                     },
                 ),
                 html.Div(
@@ -776,6 +905,12 @@ def render_tab(tab):
                             "none",
                         ),
                     ],
+                    style={
+                        "display": "flex",
+                        "justify-content": "center",
+                        "margin-top": "10px",
+                        "background-color": "#211F32",
+                    },
                 ),
                 dcc.Graph(
                     id="ticker_cndl_chart",
@@ -790,32 +925,36 @@ def render_tab(tab):
                             )
                         ],
                         layout=go.Layout(
-                            title="Chart",
                             titlefont=dict(color="grey"),
                             showlegend=False,
                             yaxis=dict(
                                 autorange=True,
                                 titlefont=dict(color="grey"),
                                 tickfont=dict(color="grey"),
+                                gridcolor="grey",
                             ),
                             xaxis_rangeslider_visible=False,
                             xaxis=dict(
                                 autorange=True,
                                 titlefont=dict(color="grey"),
                                 tickfont=dict(color="grey"),
+                                gridcolor="grey",
                             ),
                             margin=go.layout.Margin(
                                 l=40,  # left margin
                                 r=40,  # right margin
                                 b=5,  # bottom margin
-                                t=40,  # top margin
+                                t=5,  # top margin
                             ),
                             paper_bgcolor="rgba(0,0,0,0)",
+                            plot_bgcolor="#211F32",
                         ),
                     ),
                     style={
                         "margin_bottom": "0px",
                         "padding-bottom": "0px",
+                        "margin_top": "0px",
+                        "padding-top": "0px",
                         "height": "550px",
                         "width": "100%",
                         "overflow": "hidden",
@@ -1026,24 +1165,26 @@ def update_chart(
         macd = []
 
     if st_ok != None or macd_ok != None:
-        xaxis = {"showticklabels": False}
+        xaxis = {"showticklabels": False, "gridcolor": "grey"}
     else:
         xaxis = {
             "tickmode": "array",
             "tickvals": tick_values,
             "ticktext": ticktext,
+            "gridcolor": "grey",
+            "tickfont": {"color": "grey"},
         }
 
     fig = go.Figure(
         data=fig_data,
         layout=go.Layout(
-            title=ticker_value,
             showlegend=False,
             titlefont=dict(color="grey"),
             yaxis=dict(
                 autorange=True,
                 titlefont=dict(color="grey"),
                 tickfont=dict(color="grey"),
+                gridcolor="grey",
             ),
             xaxis_rangeslider_visible=False,
             xaxis=xaxis,
@@ -1051,9 +1192,10 @@ def update_chart(
                 l=40,  # left margin
                 r=40,  # right margin
                 b=5,  # bottom margin
-                t=40,  # top margin
+                t=5,  # top margin
             ),
             paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
         ),
     )
 
@@ -1061,105 +1203,162 @@ def update_chart(
 
 
 @app.callback(
-    Output("short_info_container", "children"), Input("input_ticker", "value")
+    Output("welcome_message", "children"),
+    Output("welcome_message", "style"),
+    Output("main_tabs", "style"),
+    Output("short_info_container", "children"),
+    Input("input_ticker", "value"),
 )
 def show_info(ticker_text):
-    if ticker_text == "":
-        return html.H1(
-            "", style={"text-align": "center", "color": "white", "margin": "auto"}
-        )
-    elif ticker_text is not None:
 
+    empty = "Nothing is here yet, type stock ticker to start"
+    loading = "Loading..."
+    not_found = "We couldn't find your ticker :( Correct it and try again"
+    style = {
+        "color": "white",
+        "margin-top": "150px",
+        "justify-content": "center",
+        "display": "flex",
+        "font-size": "60px",
+        "text-align": "center",
+    }
+
+    if ticker_text:
         ticker = yf.Ticker(ticker_text)
-        ticker_yq = Ticker(ticker_text)
+        ticker_yq = Ticker(ticker_text, validate=True)
+        validation = ticker_yq.symbols
+    else:
+        return empty, style, {"display": "none"}, None
+    print(f"validation {validation}")
+    if validation == []:
+        print("eureka")
+        return not_found, style, {"display": "none"}, None
 
-        name = ticker.info["shortName"]
-        currency = ticker.info["currency"]
-        logo_url = find_logo(ticker_text)
-        logo_bg_color = find_bg_color(logo_url)
-        if logo_bg_color[0] != "#":
-            logo_bg_color = "#181818"  # Default TradingView black bg_color
-        print(logo_bg_color)
-        industry = ticker.info["industry"]
-        country = ticker.info["country"]
-        flag = find_flag(country)
-        exchange = ticker_yq.price[ticker_text]["exchangeName"]
-        history = ticker.history(period="1m")
-        last_price = round(history["Close"].iloc[-1], 2)
-        prev_close = round(ticker.info["previousClose"], 2)
-        change = round(last_price - prev_close, 2)
-        if change >= 0:
-            change = f"+{change}"
-            perc_change = f"+{round(((last_price - prev_close) / prev_close * 100),2)}%"
-            font_color = "#00b51a"
-        else:
-            change = f"{change}"
-            perc_change = f"{round(((last_price - prev_close) / prev_close * 100),2)}%"
-            font_color = "#ff2d21"
+    name = ticker.info["shortName"]
+    currency = ticker.info["currency"]
+    logo_url = find_logo(ticker_text)
+    industry = ticker.info["industry"]
+    # country = ticker.info["country"]
+    # flag = find_flag(country)
+    exchange = ticker_yq.price[ticker_text]["exchangeName"]
+    history = ticker.history(period="1m")
+    last_price = round(history["Close"].iloc[-1], 2)
+    prev_close = round(ticker.info["previousClose"], 2)
+    change = round(last_price - prev_close, 2)
+    if change >= 0:
+        change = f"+{change}"
+        perc_change = f"+{round(((last_price - prev_close) / prev_close * 100),2)}%"
+        font_color = "#00b51a"
+    else:
+        change = f"{change}"
+        perc_change = f"{round(((last_price - prev_close) / prev_close * 100),2)}%"
+        font_color = "#ff2d21"
 
-        return html.Div(
-            className="row justify-content-center",
+    return (
+        "",
+        {"display": "none"},
+        {"display": "block", "width": "700px"},
+        html.Div(
             children=[
-                html.H1(
-                    name,
-                    style={"text-align": "center", "color": "white", "margin": "auto"},
-                ),
-                html.Img(
-                    src=f"{flag}",
-                    alt="image",
-                    style={"width": "90px", "height": "60px"},
-                ),
-                html.Img(
-                    src=f"{logo_url}",
-                    alt="image",
-                    style={
-                        "width": "80px",
-                        "height": "80px",
-                        "border-radius": "10px",
-                        "border": "2px solid white",
-                        "object-fit": "none",
-                        "object-position": "center",
-                        "background-color": logo_bg_color,
-                    },
-                ),
-                html.Div(
-                    children=[
-                        html.H1(
-                            f"{last_price} {currency}",
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                html.Img(
+                                    src=f"{logo_url}",
+                                    alt="image",
+                                    style={
+                                        "width": "160px",
+                                        "height": "160px",
+                                        "border-radius": "10px",
+                                        "border": "2px solid white",
+                                        "object-fit": "fill",
+                                        "object-position": "center",
+                                    },
+                                )
+                            ],
                             style={
-                                "text-align": "center",
-                                "color": "white",
-                                "margin": "auto",
+                                "margin-left": "700px",
+                                "margin-right": "0px",
+                                "margin-top": "9px",
                             },
                         ),
-                        html.H5(
-                            change,
-                            style={
-                                "text-align": "center",
-                                "color": font_color,
-                                "margin": "auto",
-                            },
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    children=[
+                                        html.H1(
+                                            name,
+                                            style={
+                                                "text-align": "left",
+                                                "color": "white",
+                                                "margin-left": "0",
+                                                "white-space": "nowrap",  # Prevent text wrapping
+                                                "overflow": "hidden",  # Hide any overflowing text
+                                                "text-overflow": "ellipsis",
+                                            },
+                                        ),
+                                        # html.Img(
+                                        #     src=f"{flag}",
+                                        #     alt="image",
+                                        #     style={
+                                        #         "width": "60px",
+                                        #         "height": "40px",
+                                        #         "margin-left": "0",
+                                        #     },
+                                        # ),
+                                    ],
+                                ),
+                                html.Div(
+                                    children=[
+                                        html.H1(
+                                            [
+                                                f"{last_price} {currency} ",
+                                                html.Span(
+                                                    f"{change} {perc_change}",
+                                                    style={
+                                                        "font-size": "20px",
+                                                        "color": font_color,
+                                                    },
+                                                ),
+                                            ],
+                                            style={
+                                                "text-align": "left",
+                                                "color": "white",
+                                                "margin-left": "0",
+                                                "white-space": "nowrap",  # Prevent text wrapping
+                                                "overflow": "hidden",  # Hide any overflowing text
+                                                "text-overflow": "ellipsis",
+                                            },
+                                        ),
+                                    ]
+                                ),
+                                html.H5(
+                                    industry,
+                                    style={
+                                        "text-align": "left",
+                                        "color": "white",
+                                        "margin-left": "0",
+                                    },
+                                ),
+                                html.H5(
+                                    exchange,
+                                    style={
+                                        "text-align": "left",
+                                        "color": "white",
+                                        "margin-left": "0",
+                                    },
+                                ),
+                            ],
+                            style={},
                         ),
-                        html.H5(
-                            perc_change,
-                            style={
-                                "text-align": "center",
-                                "color": font_color,
-                                "margin": "auto",
-                            },
-                        ),
-                    ]
-                ),
-                html.H5(
-                    industry,
-                    style={"text-align": "center", "color": "white", "margin": "auto"},
-                ),
-                html.H5(
-                    exchange,
-                    style={"text-align": "center", "color": "white", "margin": "auto"},
-                ),
+                    ],
+                    align="start",  # Align columns to the top
+                )
             ],
-        )
+            style={"display": "flex", "margin-bottom": "15px"},
+        ),
+    )
 
 
 @app.callback(
@@ -1260,7 +1459,7 @@ def cell_clicked(active_cell, table):
     Output("statistics_container", "children"),
     [Input("input_ticker", "value"), Input("main_tabs", "value"),],
 )
-def update_financials(ticker_text, tab):
+def update_statistics(ticker_text, tab):
     if tab == "statistics_tab":
         ticker = Ticker(ticker_text)
 
@@ -1286,6 +1485,347 @@ def update_financials(ticker_text, tab):
         )
 
         return table
+
+
+@app.callback(
+    Output("summary_container", "children", allow_duplicate=True),
+    [Input("input_ticker", "value"), Input("main_tabs", "value"),],
+    prevent_initial_call=True,
+)
+def update_summary(ticker_text, tab):
+
+    if ticker_text == "":
+        return None
+
+    validation = Ticker(ticker_text, validate=True).symbols
+    if validation == []:
+        return None
+
+    current_year = int(today_date.strftime("%Y"))
+    date_slider = dbc.Col(
+        [
+            dcc.RangeSlider(
+                marks={
+                    0: str(current_year - 4),
+                    1: str(current_year - 3),
+                    2: str(current_year - 2),
+                    3: str(current_year - 1),
+                    4: str(current_year),
+                },
+                step=1,
+                value=[3, 4],
+                id="my_range_slider",
+                disabled=False,
+            )
+        ],
+        width=8,
+    )
+
+    if tab == "summary_tab" and ticker_text is not None:
+        price_data = yf.download(
+            tickers=ticker_text,
+            interval="1d",
+            period="1y",
+            prepost=False,
+            threads=True,
+        )
+        price_data = price_data.reset_index()
+
+        period = 52
+        period_change = round(
+            (
+                (price_data.iloc[-1, 4] - price_data.iloc[0, 4])
+                / price_data.iloc[0, 4]
+                * 100
+            ),
+            2,
+        )
+        period_max = round(price_data["Close"].max(), 2)
+        period_min = round(price_data["Close"].min(), 2)
+        price_data["Change"] = (
+            (price_data["Close"] - price_data["Close"].shift(1))
+            / price_data["Close"].shift(1)
+            * 100
+        )
+        max_gain = round(price_data["Change"].max(), 2)
+        max_surge = round(price_data["Change"].min(), 2)
+
+        if period_change >= 0:
+            line_color = "#00b51a"
+        else:
+            line_color = "#ff2d21"
+
+        price_graph = dcc.Graph(
+            id="simple_price_chart",
+            figure=go.Figure(
+                data=[
+                    go.Scatter(
+                        x=price_data["Date"],
+                        y=price_data["Close"],
+                        line={"color": line_color},
+                    )
+                ],
+                layout=go.Layout(
+                    titlefont=dict(color="grey"),
+                    showlegend=False,
+                    yaxis=dict(
+                        autorange=True,
+                        titlefont=dict(color="grey"),
+                        tickfont=dict(color="grey"),
+                        gridcolor="grey",
+                    ),
+                    xaxis_rangeslider_visible=False,
+                    xaxis=dict(
+                        autorange=True,
+                        titlefont=dict(color="grey"),
+                        tickfont=dict(color="grey"),
+                        gridcolor="grey",
+                    ),
+                    margin=go.layout.Margin(
+                        l=40,  # left margin
+                        r=0,  # right margin
+                        b=5,  # bottom margin
+                        t=40,  # top margin
+                    ),
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                ),
+            ),
+            style={
+                "margin_bottom": "0px",
+                "padding-bottom": "0px",
+                "margin_right": "0px",
+                "padding-right": "0px",
+                "height": "400px",
+                "overflow": "hidden",
+                "background-color": "#211F32",
+            },
+        )
+
+        value = value_rating(ticker_text)
+        debt = debt_rating(ticker_text)
+        stability = stability_rating(price_data)
+        dividend = dividend_rating(ticker_text)
+        future = future_rating(ticker_text)
+
+        ratings = [value, debt, stability, dividend, future]
+        ratings_sum = sum(ratings)
+        if ratings_sum >= 15:
+            inside_color = "rgb(0,181,26)"
+        elif ratings_sum >= 7:
+            inside_color = "rgb(255,255,0)"
+        else:
+            inside_color = "rgb(255,45,33)"
+
+        radar_graph = dcc.Graph(
+            id="radar_chart",
+            figure=go.Figure(
+                data=go.Scatterpolar(
+                    r=ratings,
+                    theta=["Value", "Debt", "Stability", "Dividends", "Future"],
+                    fill="toself",
+                    line=dict(color=inside_color, shape="spline"),
+                    showlegend=False,
+                ),
+                layout=go.Layout(
+                    polar=dict(
+                        radialaxis=dict(
+                            visible=True, range=[0, 5], showticklabels=False,
+                        ),
+                        angularaxis=dict(tickfont=dict(size=16, color="white"),),
+                    ),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    margin=dict(l=60, r=60, t=40, b=20),
+                ),
+            ),
+            style={"width": "400px", "height": "400px", "margin-left": "50px"},
+        )
+
+    infos = html.Div(
+        id="infos_container",
+        children=[
+            html.H5(
+                f"{period} Week change: {period_change}%",
+                style={"color": "white", "margin-right": "20px"},
+            ),
+            html.H5(
+                f"{period} Week max: {period_max}",
+                style={"color": "white", "margin-right": "20px",},
+            ),
+            html.H5(
+                f"{period} Week min: {period_min}",
+                style={"color": "white", "margin-right": "20px"},
+            ),
+            html.H5(
+                f"{period} Week max gain: {max_gain}%",
+                style={"color": "white", "margin-right": "20px"},
+            ),
+            html.H5(
+                f"{period} max surge: {max_surge}%",
+                style={"color": "white", "margin-right": "20px"},
+            ),
+        ],
+        style={"display": "flex", "margin": "auto", "justify-content": "center",},
+    )
+
+    charts = dbc.Row(
+        [
+            dbc.Col([price_graph], id="price_graph_col", width=8),
+            dbc.Col([radar_graph], width=4),
+        ],
+        style={"margin-bottom": "40px"},
+    )
+
+    div = html.Div(children=[infos, charts, date_slider], style={"margin-top": "20px"},)
+
+    return div
+
+
+@app.callback(
+    [
+        Output("price_graph_col", "children"),
+        Output("my_range_slider", "value"),
+        Output("infos_container", "children"),
+    ],
+    Input("my_range_slider", "value"),
+    [State("price_graph_col", "children"), State("input_ticker", "value")],
+    State("infos_container", "children"),
+)
+def update_simple_chart(year, graph, ticker_text, infos):
+
+    if year[1] != 4:
+        return graph, [year[0], 4], infos
+
+    if year[0] == 4:
+        return graph, [3, 4], infos
+
+    year_list = [4, 3, 2, 1, 0]
+    year_rv = year[0]
+    year_rv = year_list[year_rv]
+
+    print(year_rv)
+
+    price_data = yf.download(
+        tickers=ticker_text,
+        interval="1d",
+        period=f"{year_rv}y",
+        prepost=False,
+        threads=True,
+    )
+    price_data = price_data.reset_index()
+
+    period = 52 * (year_rv)
+    period_change = round(
+        (
+            (price_data.iloc[-1, 4] - price_data.iloc[0, 4])
+            / price_data.iloc[0, 4]
+            * 100
+        ),
+        2,
+    )
+    period_max = round(price_data["Close"].max(), 2)
+    period_min = round(price_data["Close"].min(), 2)
+    price_data["Change"] = (
+        (price_data["Close"] - price_data["Close"].shift(1))
+        / price_data["Close"].shift(1)
+        * 100
+    )
+    max_gain = round(price_data["Change"].max(), 2)
+    max_surge = round(price_data["Change"].min(), 2)
+
+    if period_change >= 0:
+        line_color = "#00b51a"
+    else:
+        line_color = "#ff2d21"
+
+    price_graph = dcc.Graph(
+        id="simple_price_chart",
+        figure=go.Figure(
+            data=[
+                go.Scatter(
+                    x=price_data["Date"],
+                    y=price_data["Close"],
+                    line={"color": line_color},
+                )
+            ],
+            layout=go.Layout(
+                titlefont=dict(color="grey"),
+                showlegend=False,
+                yaxis=dict(
+                    autorange=True,
+                    titlefont=dict(color="grey"),
+                    tickfont=dict(color="grey"),
+                    gridcolor="grey",
+                ),
+                xaxis_rangeslider_visible=False,
+                xaxis=dict(
+                    autorange=True,
+                    titlefont=dict(color="grey"),
+                    tickfont=dict(color="grey"),
+                    gridcolor="grey",
+                ),
+                margin=go.layout.Margin(
+                    l=40,  # left margin
+                    r=40,  # right margin
+                    b=5,  # bottom margin
+                    t=40,  # top margin
+                ),
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+            ),
+        ),
+        style={
+            "margin_bottom": "0px",
+            "padding-bottom": "0px",
+            "height": "400px",
+            "overflow": "hidden",
+            "background-color": "#211F32",
+        },
+    )
+
+    infos = [
+        html.H5(
+            f"{period} Week change: {period_change}%",
+            style={"color": "white", "margin-right": "20px"},
+        ),
+        html.H5(
+            f"{period} Week max: {period_max}",
+            style={"color": "white", "margin-right": "20px",},
+        ),
+        html.H5(
+            f"{period} Week min: {period_min}",
+            style={"color": "white", "margin-right": "20px"},
+        ),
+        html.H5(
+            f"{period} Week max gain: {max_gain}%",
+            style={"color": "white", "margin-right": "20px"},
+        ),
+        html.H5(
+            f"{period} max surge: {max_surge}%",
+            style={"color": "white", "margin-right": "20px"},
+        ),
+    ]
+
+    return price_graph, year, infos
+
+
+# @app.callback(
+#     Output("welcome_message", "style"), Input("input_ticker", "value"),
+# )
+# def update_visibility(input_value):
+
+#     if input_value == "" or input_value == None:
+#         style = {
+#             "color": "white",
+#             "margin-top": "150px",
+#             "justify-content": "center",
+#             "display": "flex",
+#             "font-size": "60px",
+#             "text-align": "center",
+#         }
+#         return style
+#     else:
+#         return {"display": "none"}
 
 
 if __name__ == "__main__":
