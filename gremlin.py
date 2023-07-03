@@ -149,10 +149,26 @@ app.layout = html.Div(
                     id="main_tabs",
                     value="summary_tab",
                     children=[
-                        dcc.Tab(label="Summary", value="summary_tab",),
-                        dcc.Tab(label="Chart", value="main_chart_tab"),
-                        dcc.Tab(label="Financials", value="financials_tab"),
-                        dcc.Tab(label="Statistics", value="statistics_tab"),
+                        dcc.Tab(
+                            label="Summary",
+                            value="summary_tab",
+                            selected_className="main-selected-tab",
+                        ),
+                        dcc.Tab(
+                            label="Chart",
+                            value="main_chart_tab",
+                            selected_className="main-selected-tab",
+                        ),
+                        dcc.Tab(
+                            label="Financials",
+                            value="financials_tab",
+                            selected_className="main-selected-tab",
+                        ),
+                        dcc.Tab(
+                            label="Statistics",
+                            value="statistics_tab",
+                            selected_className="main-selected-tab",
+                        ),
                     ],
                     style={"display": "none", "width": "700px",},
                 )
@@ -327,6 +343,7 @@ def add_stochastic(
                         t=0,  # top margin
                     ),
                     paper_bgcolor="#211F32",
+                    plot_bgcolor="#211F32",
                 ),
             ),
             style={
@@ -435,6 +452,7 @@ def add_macd(
                     t=0,  # top margin
                 ),
                 paper_bgcolor="#211F32",
+                plot_bgcolor="#211F32",
             ),
         ),
         style={
@@ -821,7 +839,7 @@ def render_tab(tab):
                         dcc.Dropdown(
                             options=[
                                 {"label": "Linear", "value": "linear"},
-                                {"label": "Logarithmic", "value": "logarithmic"},
+                                {"label": "Logarithmic", "value": "log"},
                             ],
                             id="scale_dropdown",
                             placeholder="Scale",
@@ -849,17 +867,6 @@ def render_tab(tab):
                             },
                             className="dropdown-custom",
                         ),
-                        html.Div(
-                            dbc.Alert(
-                                "Invalid ticker or data range. Please be aware that for shorter intervals, only the data from the past 7 days is available.",
-                                id="error_alert",
-                                color="danger",
-                                dismissable=True,
-                                is_open=False,
-                                duration=4500,
-                            ),
-                            style={"display": "flex", "justify-content": "center"},
-                        ),
                     ],
                     style={
                         "display": "flex",
@@ -867,6 +874,17 @@ def render_tab(tab):
                         "margin-top": "10px",
                         "background-color": "#211F32",
                     },
+                ),
+                html.Div(
+                    dbc.Alert(
+                        "Invalid data range. Please be aware that for shorter intervals, only the data from the past 7 days is available.",
+                        id="error_alert",
+                        color="danger",
+                        dismissable=True,
+                        is_open=False,
+                        duration=5500,
+                    ),
+                    style={"display": "flex", "justify-content": "center"},
                 ),
                 html.Div(
                     id="modals",
@@ -912,6 +930,15 @@ def render_tab(tab):
                         "background-color": "#211F32",
                     },
                 ),
+                html.Div(
+                    id="stats_container",
+                    children=[],
+                    style={
+                        "display": "flex",
+                        "justify-content": "center",
+                        "margin-top": "10px",
+                    },
+                ),
                 dcc.Graph(
                     id="ticker_cndl_chart",
                     figure=go.Figure(
@@ -928,6 +955,7 @@ def render_tab(tab):
                             titlefont=dict(color="grey"),
                             showlegend=False,
                             yaxis=dict(
+                                type="linear",
                                 autorange=True,
                                 titlefont=dict(color="grey"),
                                 tickfont=dict(color="grey"),
@@ -976,33 +1004,69 @@ def render_tab(tab):
                             value="income_stmt_tab",
                             children=[
                                 dcc.Tab(
-                                    label="Income statement", value="income_stmt_tab"
+                                    label="Income statement",
+                                    value="income_stmt_tab",
+                                    className="custom-tabs",
+                                    selected_className="selected-tab",
+                                    style={"padding-top": "4px",},
+                                    selected_style={"padding-top": "4px"},
                                 ),
                                 dcc.Tab(
-                                    label="Balance sheet", value="balance_sheet_tab"
+                                    label="Balance sheet",
+                                    value="balance_sheet_tab",
+                                    className="custom-tabs",
+                                    selected_className="selected-tab",
                                 ),
-                                dcc.Tab(label="Cash flow", value="cash_flow_tab"),
+                                dcc.Tab(
+                                    label="Cash flow",
+                                    value="cash_flow_tab",
+                                    className="custom-tabs",
+                                    selected_className="selected-tab",
+                                ),
                             ],
                             style={
-                                "width": "700px",
+                                "width": "400px",
                                 "display": "flex",
-                                "justify-content": "center",
+                                "font-size": "12px",
+                                "margin-right": "60px",
+                                "borders": "none",
                             },
                         ),
                         dcc.Tabs(
                             id="qora_tabs",
                             value="annual_tab",
                             children=[
-                                dcc.Tab(label="Annual", value="annual_tab"),
-                                dcc.Tab(label="Quarterly", value="quarterly_tab"),
+                                dcc.Tab(
+                                    label="Annual",
+                                    value="annual_tab",
+                                    className="custom-tabs",
+                                    selected_className="selected-tab",
+                                    style={"padding-left": "20px",},
+                                    selected_style={"padding-left": "20px"},
+                                ),
+                                dcc.Tab(
+                                    label="Quarterly",
+                                    value="quarterly_tab",
+                                    className="custom-tabs",
+                                    selected_className="selected-tab",
+                                    style={"padding-left": "15px",},
+                                    selected_style={"padding-left": "15px"},
+                                ),
                             ],
                             style={
-                                "width": "700px",
+                                "width": "150px",
                                 "display": "flex",
-                                "justify-content": "center",
+                                "font-size": "10px",
+                                "borders": "none",
                             },
                         ),
-                    ]
+                    ],
+                    style={
+                        "display": "flex",
+                        "justify-content": "center",
+                        "margin-top": "10px",
+                        "margin-bottom": "5px",
+                    },
                 ),
                 html.Div(
                     id="financials_container",
@@ -1026,6 +1090,7 @@ def render_tab(tab):
         Output("error_alert", "is_open"),
         Output("stoch_container", "children", allow_duplicate=True),
         Output("macd_container", "children", allow_duplicate=True),
+        Output("stats_container", "children"),
     ],
     [
         Input("input_ticker", "value"),
@@ -1036,14 +1101,17 @@ def render_tab(tab):
         Input("bb_ok", "n_clicks"),
         Input("st_ok", "n_clicks"),
         Input("macd_ok", "n_clicks"),
+        Input("scale_dropdown", "value"),
+        Input("type_dropdown", "value"),
     ],
     State("ma_param1", "value"),
-    State("bb_param1", "value"),
     State("bb_param2", "value"),
+    State("bb_param1", "value"),
     State("st_param1", "value"),
     State("st_param2", "value"),
     State("macd_param1", "value"),
     State("macd_param2", "value"),
+    State("ticker_cndl_chart", "figure"),
     prevent_initial_call=True,
 )
 def update_chart(
@@ -1055,6 +1123,8 @@ def update_chart(
     bb_ok,
     st_ok,
     macd_ok,
+    scale,
+    type,
     ma_length,
     bb_length,
     bb_std,
@@ -1062,12 +1132,13 @@ def update_chart(
     st_slowing,
     fast_ema,
     slow_ema,
+    init_figure,
 ):
     stoch = []
     macd = []
 
     if ticker_value is None or interval_value is None or start_date is None:
-        return go.Figure(), False, stoch
+        return init_figure, False, stoch, macd, None
 
     ticker = yf.download(
         tickers=ticker_value,
@@ -1077,11 +1148,56 @@ def update_chart(
         prepost=False,
         threads=True,
     )
-
+    print(f"Ticker = {ticker}")
     if ticker.empty:
-        return go.Figure(), True, stoch
+        print("Fullfilled")
+        return init_figure, True, stoch, macd, None
 
     ticker = ticker.reset_index()
+
+    # STATS
+
+    ticker["Perc change"] = (ticker["Open"] - ticker["Close"]) / ticker["Open"] * 100
+    ticker["Perc range"] = (ticker["High"] - ticker["Low"]) / ticker["High"] * 100
+    ticker["Gap"] = (ticker["Open"] - ticker["Close"].shift(1)) / ticker["Open"] * 100
+    ticker["Gap"] = ticker["Gap"].fillna(0)
+
+    min = round(ticker["Low"].min(), 2)
+    avg = f"{start_date} & {end_date}"
+    max = round(ticker["High"].max(), 2)
+    perc_change = round(
+        (
+            100
+            * (
+                (int(ticker.iloc[-1, 4]) - int(ticker.iloc[0, 1]))
+                / int(ticker.iloc[0, 1])
+            )
+        ),
+        2,
+    )
+
+    price_range = round((max - min), 2)
+    perc_range = round((price_range / max * 100), 2)
+    # Gap
+    avg_gap = round(ticker["Gap"].mean(), 2)
+    min_gap = round(ticker["Gap"].min(), 2)
+    max_gap = round(ticker["Gap"].max(), 2)
+    # Single candles
+    avg_perc_change = round(ticker["Perc change"].mean(), 2)
+    min_perc_change = round(ticker["Perc change"].min(), 2)
+    max_perc_change = round(ticker["Perc change"].max(), 2)
+    avg_perc_range = round(ticker["Perc range"].mean(), 2)
+    min_perc_range = round(ticker["Perc range"].min(), 2)
+    max_perc_range = round(ticker["Perc range"].max(), 2)
+
+    stats = [
+        html.H5(f"Percentage change: {perc_change}%", className="stats_styling"),
+        html.H5(f"Price range: {price_range}", className="stats_styling"),
+        html.H5(f"Percentage range: {perc_range}%", className="stats_styling"),
+        html.H5(f"Min: {min}", className="stats_styling"),
+        html.H5(f"Avg: {avg}", className="stats_styling"),
+        html.H5(f"Max: {max}", className="stats_styling"),
+    ]
 
     length_df = len(ticker.index)
     if length_df < 25:
@@ -1100,16 +1216,28 @@ def update_chart(
     else:
         ticktext = [str(val)[:10] for val in ticker.iloc[tick_indices, 0]]
 
-    fig_data = [
-        go.Candlestick(
-            x=ticker.index,
-            open=ticker["Open"],
-            high=ticker["High"],
-            low=ticker["Low"],
-            close=ticker["Close"],
-            name="OHLC",
-        )
-    ]
+    if type == "candlesticks":
+        fig_data = [
+            go.Candlestick(
+                x=ticker.index,
+                open=ticker["Open"],
+                high=ticker["High"],
+                low=ticker["Low"],
+                close=ticker["Close"],
+            )
+        ]
+    elif type == "bars":
+        fig_data = [
+            go.Ohlc(
+                x=ticker.index,
+                open=ticker["Open"],
+                high=ticker["High"],
+                low=ticker["Low"],
+                close=ticker["Close"],
+            )
+        ]
+    else:
+        fig_data = [go.Scatter(x=ticker.index, y=ticker["Close"],)]
 
     # Add moving average to the plot if selected
     if ma_ok != None:
@@ -1165,25 +1293,30 @@ def update_chart(
         macd = []
 
     if st_ok != None or macd_ok != None:
-        xaxis = {"showticklabels": False, "gridcolor": "grey"}
+        xaxis = {
+            "showticklabels": False,
+            "gridcolor": "grey",
+            "tickfont": {"color": "white"},
+        }
     else:
         xaxis = {
             "tickmode": "array",
             "tickvals": tick_values,
             "ticktext": ticktext,
             "gridcolor": "grey",
-            "tickfont": {"color": "grey"},
+            "tickfont": {"color": "white"},
         }
 
     fig = go.Figure(
         data=fig_data,
         layout=go.Layout(
             showlegend=False,
-            titlefont=dict(color="grey"),
+            titlefont=dict(color="white"),
             yaxis=dict(
+                type=scale,
                 autorange=True,
-                titlefont=dict(color="grey"),
-                tickfont=dict(color="grey"),
+                titlefont=dict(color="white"),
+                tickfont=dict(color="white"),
                 gridcolor="grey",
             ),
             xaxis_rangeslider_visible=False,
@@ -1199,7 +1332,7 @@ def update_chart(
         ),
     )
 
-    return fig, False, stoch, macd
+    return fig, False, stoch, macd, stats
 
 
 @app.callback(
@@ -1229,9 +1362,7 @@ def show_info(ticker_text):
         validation = ticker_yq.symbols
     else:
         return empty, style, {"display": "none"}, None
-    print(f"validation {validation}")
     if validation == []:
-        print("eureka")
         return not_found, style, {"display": "none"}, None
 
     name = ticker.info["shortName"]
@@ -1388,6 +1519,19 @@ def update_financials(ticker_text, tab1, tab2, tab3):
         table_data.reset_index(inplace=True)
         table_data.columns = range(table_data.shape[1])
 
+        print(table_data)
+        table_data.drop(1, 0, inplace=True)
+        table_data.drop(2, 0, inplace=True)
+
+        for period in table_data.iloc[0]:
+            print(period)
+            if str(period)[0] == "2":
+                if frequency == "a":
+                    period = str(period)[:4]
+                elif frequency == "q":
+                    period == str(period)[:7]
+                print(period)
+
         # columns = []  # Start with index column
         # for column in table_data.columns:
         #     columns.append({"name": column, "id": column})
@@ -1408,6 +1552,7 @@ def update_financials(ticker_text, tab1, tab2, tab3):
                 "textAlign": "center",
                 "color": "white",
                 "backgroundColor": "#211F32",
+                "fontFamily": "Lato",
             },
             style_header={"fontWeight": "bold"},
         )
@@ -1435,20 +1580,24 @@ def cell_clicked(active_cell, table):
 
     figson = dcc.Graph(
         id="bar-chart",
+        className="financial-charts",
         figure={
-            "data": [{"x": x_data, "y": y_data, "type": "bar"}],
+            "data": [
+                {
+                    "x": x_data,
+                    "y": y_data,
+                    "type": "bar",
+                    "marker": {"color": "#3ad1b8"},
+                }
+            ],
             "layout": {
                 "title": value,
-                "xaxis": {"title": "Categories"},
-                "yaxis": {"title": "Values"},
+                "titlefont": {"color": "white"},
+                "xaxis": {"color": "white"},
+                "yaxis": {"color": "white"},
+                "plot_bgcolor": "#211F32",
+                "paper_bgcolor": "#211F32",
             },
-        },
-        style={
-            "width": "600px",
-            "height": "350px",
-            "display": "flex",
-            "margin": "0 auto",
-            "justify-content": "center",
         },
     )
 
@@ -1807,25 +1956,6 @@ def update_simple_chart(year, graph, ticker_text, infos):
     ]
 
     return price_graph, year, infos
-
-
-# @app.callback(
-#     Output("welcome_message", "style"), Input("input_ticker", "value"),
-# )
-# def update_visibility(input_value):
-
-#     if input_value == "" or input_value == None:
-#         style = {
-#             "color": "white",
-#             "margin-top": "150px",
-#             "justify-content": "center",
-#             "display": "flex",
-#             "font-size": "60px",
-#             "text-align": "center",
-#         }
-#         return style
-#     else:
-#         return {"display": "none"}
 
 
 if __name__ == "__main__":

@@ -1,8 +1,64 @@
 .Select-control {
-    background-color: "#211F32" !important;
+    background-color: #211F32 !important;
     color: white;
 }
 
 .Select-value-label {
     color: white !important;
+}
+
+.stats_styling {
+    color: white;
+    margin-right: 15px;
+    font-size: 11px;
+}
+
+.custom-tabs {
+    color: white;
+    display: flex;
+    background-color: #211F32 !important;
+    background: #211F32 !important;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 50px;
+    border-top: none !important;
+    border-right: none !important;
+    border-left: none !important;
+    border-bottom: 2px solid #3ad1b8 !important;
+    border-radius: 0% !important;
+}
+
+.selected-tab {
+    color: white;
+    display: flex;
+    background-color: #211F32 !important;
+    background: #211F32 !important;
+    color: white !important;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 50px;
+    border-top: 2px solid #3ad1b8 !important;
+    border-left: 2px solid #3ad1b8 !important;
+    border-right: 2px solid #3ad1b8 !important;
+    border-bottom: none !important;
+    border-top-left-radius: 5% !important;
+    border-top-right-radius: 5% !important;
+    font-weight: bold !important;
+}
+
+.main-selected-tab {
+    border-top: 2px solid #3ad1b8 !important;
+}
+
+.financial-charts {
+    width: 610px;
+    height: 350px;
+    display: flex;
+    margin: 0 auto;
+    justify-content: center;
+    background-color: #211F32 !important;
+    background: #211F32 !important;
+    color: white;
 }
