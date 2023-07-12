@@ -4,7 +4,6 @@ from dash import html
 from dash.dependencies import Input, Output, State, MATCH, ALLSMALLER, ALL
 from dash.exceptions import PreventUpdate
 from dash import dash_table
-import numpy as np
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
@@ -22,12 +21,7 @@ from radar_ratings import (
     dividend_rating,
     future_rating,
 )
-from utils import (
-    count_zeros_after_decimal,
-    get_linear_regression_params,
-    calculate_streak,
-    get_percentage_returns_statistics,
-)
+from plotly.subplots import make_subplots
 
 
 intervals = ["1d", "1m", "1mo", "1wk", "3mo", "5m", "15m", "30m", "60m", "90m"]
@@ -156,26 +150,10 @@ app.layout = html.Div(
                     id="main_tabs",
                     value="summary_tab",
                     children=[
-                        dcc.Tab(
-                            label="Summary",
-                            value="summary_tab",
-                            selected_className="main-selected-tab",
-                        ),
-                        dcc.Tab(
-                            label="Chart",
-                            value="main_chart_tab",
-                            selected_className="main-selected-tab",
-                        ),
-                        dcc.Tab(
-                            label="Financials",
-                            value="financials_tab",
-                            selected_className="main-selected-tab",
-                        ),
-                        dcc.Tab(
-                            label="Statistics",
-                            value="statistics_tab",
-                            selected_className="main-selected-tab",
-                        ),
+                        dcc.Tab(label="Summary", value="summary_tab",),
+                        dcc.Tab(label="Chart", value="main_chart_tab"),
+                        dcc.Tab(label="Financials", value="financials_tab"),
+                        dcc.Tab(label="Statistics", value="statistics_tab"),
                     ],
                     style={"display": "none", "width": "700px",},
                 )
@@ -321,44 +299,33 @@ def add_stochastic(
         ticker = ticker2
     ticker = ticker.reset_index()
 
-    fig2 = (
-        dcc.Graph(
-            id="stochastic_chart",
-            figure=go.Figure(
-                data=[
-                    go.Scatter(x=ticker.iloc[:, 0], y=ticker["%K"], name="%K"),
-                    go.Scatter(x=ticker.iloc[:, 0], y=ticker["%D"], name="%D"),
-                ],
-                layout=go.Layout(
-                    showlegend=False,
-                    yaxis=dict(
-                        autorange=True,
-                        titlefont=dict(color="grey"),
-                        tickfont=dict(color="grey"),
-                    ),
-                    xaxis_rangeslider_visible=False,
-                    xaxis=dict(
-                        showticklabels=xaxis,
-                        autorange=True,
-                        titlefont=dict(color="grey"),
-                        tickfont=dict(color="grey"),
-                    ),
-                    margin=go.layout.Margin(
-                        l=40,  # left margin
-                        r=40,  # right margin
-                        b=5,  # bottom margin
-                        t=0,  # top margin
-                    ),
-                    paper_bgcolor="#211F32",
-                    plot_bgcolor="#211F32",
-                ),
+    fig2 = go.Figure(
+        data=[
+            go.Scatter(x=ticker.iloc[:, 0], y=ticker["%K"], name="%K"),
+            go.Scatter(x=ticker.iloc[:, 0], y=ticker["%D"], name="%D"),
+        ],
+        layout=go.Layout(
+            showlegend=False,
+            yaxis=dict(
+                autorange=True,
+                titlefont=dict(color="white"),
+                tickfont=dict(color="white"),
             ),
-            style={
-                "margin-top": "0px",
-                "height": "175px",
-                "padding-top": "0px",
-                "width": "100%",
-            },
+            xaxis_rangeslider_visible=False,
+            xaxis=dict(
+                showticklabels=xaxis,
+                autorange=True,
+                titlefont=dict(color="white"),
+                tickfont=dict(color="white"),
+            ),
+            margin=go.layout.Margin(
+                l=40,  # left margin
+                r=40,  # right margin
+                b=5,  # bottom margin
+                t=0,  # top margin
+            ),
+            paper_bgcolor="#211F32",
+            plot_bgcolor="#211F32",
         ),
     )
 
@@ -403,71 +370,56 @@ def add_macd(
     macd_positive = ticker.loc[ticker["MACD"] >= 0]
     macd_negative = ticker.loc[ticker["MACD"] < 0]
 
-    fig3 = dcc.Graph(
-        id="macd_chart",
-        figure=go.Figure(
-            data=[
-                # Use different colors for positive and negative values
-                go.Bar(
-                    x=macd_positive.iloc[:, 0],
-                    y=macd_positive["MACD"],
-                    name="MACD",
-                    yaxis="y1",
-                    marker=dict(color="blue"),
-                ),
-                go.Bar(
-                    x=macd_negative.iloc[:, 0],
-                    y=macd_negative["MACD"],
-                    name="MACD",
-                    yaxis="y1",
-                    marker=dict(color="Aqua"),
-                ),
-                go.Scatter(
-                    x=ticker.iloc[:, 0],
-                    y=ticker["Fast EMA"],
-                    name="Fast EMA",
-                    yaxis="y2",
-                ),
-                go.Scatter(
-                    x=ticker.iloc[:, 0],
-                    y=ticker["Slow EMA"],
-                    name="Slow EMA",
-                    yaxis="y2",
-                ),
-            ],
-            layout=go.Layout(
-                yaxis1=dict(
-                    autorange=True,
-                    titlefont=dict(color="gray"),
-                    tickfont=dict(color="gray"),
-                ),
-                yaxis2=dict(
-                    titlefont=dict(color="gray"),
-                    tickfont=dict(color="gray"),
-                    anchor="free",
-                    overlaying="y",
-                    side="right",
-                    position=1,
-                ),
-                showlegend=False,
-                xaxis_rangeslider_visible=False,
-                xaxis={"showticklabels": xaxis},
-                margin=go.layout.Margin(
-                    l=40,  # left margin
-                    r=40,  # right margin
-                    b=5,  # bottom margin
-                    t=0,  # top margin
-                ),
-                paper_bgcolor="#211F32",
-                plot_bgcolor="#211F32",
+    fig3 = go.Figure(
+        data=[
+            # Use different colors for positive and negative values
+            go.Bar(
+                x=macd_positive.iloc[:, 0],
+                y=macd_positive["MACD"],
+                name="MACD",
+                yaxis="y1",
+                marker=dict(color="blue"),
             ),
+            go.Bar(
+                x=macd_negative.iloc[:, 0],
+                y=macd_negative["MACD"],
+                name="MACD",
+                yaxis="y1",
+                marker=dict(color="Aqua"),
+            ),
+            go.Scatter(
+                x=ticker.iloc[:, 0], y=ticker["Fast EMA"], name="Fast EMA", yaxis="y2",
+            ),
+            go.Scatter(
+                x=ticker.iloc[:, 0], y=ticker["Slow EMA"], name="Slow EMA", yaxis="y2",
+            ),
+        ],
+        layout=go.Layout(
+            yaxis1=dict(
+                autorange=True,
+                titlefont=dict(color="white"),
+                tickfont=dict(color="white"),
+            ),
+            yaxis2=dict(
+                titlefont=dict(color="white"),
+                tickfont=dict(color="white"),
+                anchor="free",
+                overlaying="y",
+                side="right",
+                position=1,
+            ),
+            showlegend=False,
+            xaxis_rangeslider_visible=False,
+            xaxis={"showticklabels": xaxis},
+            margin=go.layout.Margin(
+                l=40,  # left margin
+                r=40,  # right margin
+                b=5,  # bottom margin
+                t=0,  # top margin
+            ),
+            paper_bgcolor="#211F32",
+            plot_bgcolor="#211F32",
         ),
-        style={
-            "margin-top": "0px",
-            "height": "175px",
-            "padding-top": "0px",
-            "width": "100%",
-        },
     )
 
     return fig3
@@ -937,15 +889,6 @@ def render_tab(tab):
                         "background-color": "#211F32",
                     },
                 ),
-                html.Div(
-                    id="stats_container",
-                    children=[],
-                    style={
-                        "display": "flex",
-                        "justify-content": "center",
-                        "margin-top": "10px",
-                    },
-                ),
                 dcc.Graph(
                     id="ticker_cndl_chart",
                     figure=go.Figure(
@@ -1011,69 +954,33 @@ def render_tab(tab):
                             value="income_stmt_tab",
                             children=[
                                 dcc.Tab(
-                                    label="Income statement",
-                                    value="income_stmt_tab",
-                                    className="custom-tabs",
-                                    selected_className="selected-tab",
-                                    style={"padding-top": "4px",},
-                                    selected_style={"padding-top": "4px"},
+                                    label="Income statement", value="income_stmt_tab"
                                 ),
                                 dcc.Tab(
-                                    label="Balance sheet",
-                                    value="balance_sheet_tab",
-                                    className="custom-tabs",
-                                    selected_className="selected-tab",
+                                    label="Balance sheet", value="balance_sheet_tab"
                                 ),
-                                dcc.Tab(
-                                    label="Cash flow",
-                                    value="cash_flow_tab",
-                                    className="custom-tabs",
-                                    selected_className="selected-tab",
-                                ),
+                                dcc.Tab(label="Cash flow", value="cash_flow_tab"),
                             ],
                             style={
-                                "width": "400px",
+                                "width": "700px",
                                 "display": "flex",
-                                "font-size": "12px",
-                                "margin-right": "60px",
-                                "borders": "none",
+                                "justify-content": "center",
                             },
                         ),
                         dcc.Tabs(
                             id="qora_tabs",
                             value="annual_tab",
                             children=[
-                                dcc.Tab(
-                                    label="Annual",
-                                    value="annual_tab",
-                                    className="custom-tabs",
-                                    selected_className="selected-tab",
-                                    style={"padding-left": "20px",},
-                                    selected_style={"padding-left": "20px"},
-                                ),
-                                dcc.Tab(
-                                    label="Quarterly",
-                                    value="quarterly_tab",
-                                    className="custom-tabs",
-                                    selected_className="selected-tab",
-                                    style={"padding-left": "15px",},
-                                    selected_style={"padding-left": "15px"},
-                                ),
+                                dcc.Tab(label="Annual", value="annual_tab"),
+                                dcc.Tab(label="Quarterly", value="quarterly_tab"),
                             ],
                             style={
-                                "width": "150px",
+                                "width": "700px",
                                 "display": "flex",
-                                "font-size": "10px",
-                                "borders": "none",
+                                "justify-content": "center",
                             },
                         ),
-                    ],
-                    style={
-                        "display": "flex",
-                        "justify-content": "center",
-                        "margin-top": "10px",
-                        "margin-bottom": "5px",
-                    },
+                    ]
                 ),
                 html.Div(
                     id="financials_container",
@@ -1085,60 +992,14 @@ def render_tab(tab):
     elif tab == "statistics_tab":
         return html.Div(
             id="statistics_container",
-            children=[
-                html.Div(
-                    children=[
-                        dcc.DatePickerSingle(
-                            id="start_datepicker", placeholder="Start date"
-                        ),
-                        dcc.DatePickerSingle(
-                            id="end_datepicker", placeholder="End date"
-                        ),
-                    ],
-                    className="StatContainer",
-                ),
-                html.Div(
-                    children=[
-                        dcc.Dropdown(
-                            options=[{"label": i, "value": i} for i in intervals],
-                            id="interval_dropdown_s",
-                            placeholder="Interval",
-                            style={
-                                "width": "230px",
-                                "background-color": "#211F32",
-                                "width": "140px",
-                            },
-                            className="interval-dd-stat",
-                        ),
-                    ],
-                    className="interval-dd-stat",
-                ),
-                html.Div(
-                    dbc.Alert(
-                        "Invalid data range. Please be aware that for shorter intervals, only the data from the past 7 days is available.",
-                        id="error_alert_s",
-                        color="danger",
-                        dismissable=True,
-                        is_open=False,
-                        duration=5500,
-                    ),
-                    style={"display": "flex", "justify-content": "center"},
-                ),
-                html.Div(id="statistics_container2"),
-            ],
+            children=[],
             style={"backgroundColor": "#211F32"},
         )
 
 
 # UPDATING CHART
 @app.callback(
-    [
-        Output("ticker_cndl_chart", "figure"),
-        Output("error_alert", "is_open"),
-        Output("stoch_container", "children", allow_duplicate=True),
-        Output("macd_container", "children", allow_duplicate=True),
-        Output("stats_container", "children"),
-    ],
+    [Output("ticker_cndl_chart", "figure"), Output("error_alert", "is_open"),],
     [
         Input("input_ticker", "value"),
         Input("interval_dropdown", "value"),
@@ -1185,7 +1046,7 @@ def update_chart(
     macd = []
 
     if ticker_value is None or interval_value is None or start_date is None:
-        return init_figure, False, stoch, macd, None
+        return init_figure, False
 
     ticker = yf.download(
         tickers=ticker_value,
@@ -1198,53 +1059,9 @@ def update_chart(
     print(f"Ticker = {ticker}")
     if ticker.empty:
         print("Fullfilled")
-        return init_figure, True, stoch, macd, None
+        return init_figure, True
 
     ticker = ticker.reset_index()
-
-    # STATS
-
-    ticker["Perc change"] = (ticker["Open"] - ticker["Close"]) / ticker["Open"] * 100
-    ticker["Perc range"] = (ticker["High"] - ticker["Low"]) / ticker["High"] * 100
-    ticker["Gap"] = (ticker["Open"] - ticker["Close"].shift(1)) / ticker["Open"] * 100
-    ticker["Gap"] = ticker["Gap"].fillna(0)
-
-    min = round(ticker["Low"].min(), 2)
-    avg = f"{start_date} & {end_date}"
-    max = round(ticker["High"].max(), 2)
-    perc_change = round(
-        (
-            100
-            * (
-                (int(ticker.iloc[-1, 4]) - int(ticker.iloc[0, 1]))
-                / int(ticker.iloc[0, 1])
-            )
-        ),
-        2,
-    )
-
-    price_range = round((max - min), 2)
-    perc_range = round((price_range / max * 100), 2)
-    # Gap
-    avg_gap = round(ticker["Gap"].mean(), 2)
-    min_gap = round(ticker["Gap"].min(), 2)
-    max_gap = round(ticker["Gap"].max(), 2)
-    # Single candles
-    avg_perc_change = round(ticker["Perc change"].mean(), 2)
-    min_perc_change = round(ticker["Perc change"].min(), 2)
-    max_perc_change = round(ticker["Perc change"].max(), 2)
-    avg_perc_range = round(ticker["Perc range"].mean(), 2)
-    min_perc_range = round(ticker["Perc range"].min(), 2)
-    max_perc_range = round(ticker["Perc range"].max(), 2)
-
-    stats = [
-        html.H5(f"Percentage change: {perc_change}%", className="stats_styling"),
-        html.H5(f"Price range: {price_range}", className="stats_styling"),
-        html.H5(f"Percentage range: {perc_range}%", className="stats_styling"),
-        html.H5(f"Min: {min}", className="stats_styling"),
-        html.H5(f"Avg: {avg}", className="stats_styling"),
-        html.H5(f"Max: {max}", className="stats_styling"),
-    ]
 
     length_df = len(ticker.index)
     if length_df < 25:
@@ -1264,27 +1081,23 @@ def update_chart(
         ticktext = [str(val)[:10] for val in ticker.iloc[tick_indices, 0]]
 
     if type == "candlesticks":
-        fig_data = [
-            go.Candlestick(
-                x=ticker.index,
-                open=ticker["Open"],
-                high=ticker["High"],
-                low=ticker["Low"],
-                close=ticker["Close"],
-            )
-        ]
+        fig_data = go.Candlestick(
+            x=ticker.index,
+            open=ticker["Open"],
+            high=ticker["High"],
+            low=ticker["Low"],
+            close=ticker["Close"],
+        )
     elif type == "bars":
-        fig_data = [
-            go.Ohlc(
-                x=ticker.index,
-                open=ticker["Open"],
-                high=ticker["High"],
-                low=ticker["Low"],
-                close=ticker["Close"],
-            )
-        ]
+        fig_data = go.Ohlc(
+            x=ticker.index,
+            open=ticker["Open"],
+            high=ticker["High"],
+            low=ticker["Low"],
+            close=ticker["Close"],
+        )
     else:
-        fig_data = [go.Scatter(x=ticker.index, y=ticker["Close"],)]
+        fig_data = go.Scatter(x=ticker.index, y=ticker["Close"],)
 
     # Add moving average to the plot if selected
     if ma_ok != None:
@@ -1339,47 +1152,45 @@ def update_chart(
     else:
         macd = []
 
-    if st_ok != None or macd_ok != None:
-        xaxis = {
-            "showticklabels": False,
-            "gridcolor": "grey",
-            "tickfont": {"color": "white"},
-        }
-    else:
-        xaxis = {
-            "tickmode": "array",
-            "tickvals": tick_values,
-            "ticktext": ticktext,
-            "gridcolor": "grey",
-            "tickfont": {"color": "white"},
-        }
+    # if st_ok != None or macd_ok != None:
+    #     xaxis = {
+    #         "showticklabels": False,
+    #         "gridcolor": "grey",
+    #         "tickfont": {"color": "white"},
+    #     }
+    # else:
+    #     xaxis = {
+    #         "tickmode": "array",
+    #         "tickvals": tick_values,
+    #         "ticktext": ticktext,
+    #         "gridcolor": "grey",
+    #         "tickfont": {"color": "white"},
+    #     }
 
-    fig = go.Figure(
-        data=fig_data,
-        layout=go.Layout(
-            showlegend=False,
-            titlefont=dict(color="white"),
-            yaxis=dict(
-                type=scale,
-                autorange=True,
-                titlefont=dict(color="white"),
-                tickfont=dict(color="white"),
-                gridcolor="grey",
-            ),
-            xaxis_rangeslider_visible=False,
-            xaxis=xaxis,
-            margin=go.layout.Margin(
-                l=40,  # left margin
-                r=40,  # right margin
-                b=5,  # bottom margin
-                t=5,  # top margin
-            ),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
+    fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.1)
+    fig.add_trace(fig_data, row=1, col=1)
+
+    if st_ok != None:
+        fig.add_trace(stoch, row=2, col=1)
+    if macd_ok != None:
+        fig.add_trace(macd, row=3, col=1)
+
+    fig.update_layout(
+        yaxis=dict(title="Main chart", domain=[0.3, 1]),
+        yaxis2=dict(title="Stoch indicator", domain=[0.15, 0.3]),
+        yaxis3=dict(title="MACD indicator", domain=[0, 0.15]),
+        xaxis=dict(rangeslider=dict(visible=False)),
+        margin=go.layout.Margin(
+            l=40,  # left margin
+            r=40,  # right margin
+            b=5,  # bottom margin
+            t=5,  # top margin
         ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
-    return fig, False, stoch, macd, stats
+    return fig, False
 
 
 @app.callback(
@@ -1562,75 +1373,15 @@ def update_financials(ticker_text, tab1, tab2, tab3):
         elif tab2 == "cash_flow_tab":
             table_data = ticker.cash_flow(frequency)
 
-        table_data.reset_index(inplace=True)
         table_data = table_data.transpose()
         table_data.reset_index(inplace=True)
-        table_data.drop(0, 0, inplace=True)
+        table_data.columns = range(table_data.shape[1])
 
-        table_data.columns = table_data.iloc[0]
-        table_data = table_data[1:]
+        # columns = []  # Start with index column
+        # for column in table_data.columns:
+        #     columns.append({"name": column, "id": column})
 
-        table_data.index = table_data.iloc[:, 0]
-        table_data = table_data.iloc[:, 1:]
-
-        rows_to_keep = []
-        for i in range(len(table_data)):
-            if not all(
-                str(cell) == "" or cell == 0 or cell is None
-                for cell in table_data.iloc[i]
-            ):
-                rows_to_keep.append(i)
-        table_data = table_data.iloc[rows_to_keep]
-        table_data.dropna(inplace=True)
-
-        table_data.index.name = ""
-        table_data.columns.name = "Date"
-
-        columns_to_keep = []
-        for x in range(len(table_data.columns)):
-            if table_data.iloc[0, x] != "TTM":
-                columns_to_keep.append(x)
-        table_data = table_data.iloc[:, columns_to_keep]
-
-        table_data.drop(table_data.index[1], 0, inplace=True)
-        table_data.drop(table_data.index[0], 0, inplace=True)
-
-        length = len(table_data.index)
-        width = len(table_data.columns)
-
-        for l in range(length):
-            for w in range(width):
-                if type(table_data.iloc[l, w]) == float:
-                    table_data.iloc[l, w] = format(table_data.iloc[l, w], ",")
-
-        new_columns = []
-        for x in range(len(table_data.columns)):
-            if frequency == "a":
-                new_label = str(table_data.columns[x])[:7]
-            elif frequency == "q":
-                new_label = str(table_data.columns[x])[:7]
-            new_columns.append(new_label)
-
-        table_data.columns = new_columns
-        table_data = table_data.iloc[:, -4:]
-        # Deleting "EBITDA", it is always nan
-        table_data.drop("EBITDA", inplace=True)
-        table_data.reset_index(inplace=True)
-
-        # Formatting table labels text
-        for r in range(len(table_data.index)):
-            for c in range(len(table_data.columns)):
-                new_x = ""
-                x = table_data.iloc[r, c]
-                for y in range(len(x)):
-                    if x[y].isupper() and x[y - 1].isupper() == False and y != 0:
-                        z = f" {x[y]}"
-                        new_x = new_x + z
-                    else:
-                        new_x = new_x + x[y]
-                table_data.iloc[r, c] = new_x
-
-        initial_active_cell = {"row": 0, "column": 0, "column_id": "0", "row_id": 0}
+        initial_active_cell = {"row": 11, "column": 0, "column_id": "0", "row_id": 11}
 
         table = dash_table.DataTable(
             id="financials_table",
@@ -1640,20 +1391,14 @@ def update_financials(ticker_text, tab1, tab2, tab3):
                 "maxWidth": "700px",
                 "marginLeft": "auto",
                 "marginRight": "auto",
-            },
+            },  # Center the table horizontally
             style_cell={
                 "whiteSpace": "normal",
                 "textAlign": "center",
                 "color": "white",
                 "backgroundColor": "#211F32",
-                "fontFamily": "Lato",
-                "fontSize": "14px",
-                "padding": "10px",
             },
-            style_header={"fontWeight": "bold", "border": "1px blue"},
-            style_data_conditional=[
-                {"if": {"column_id": table_data.columns[0]}, "fontWeight": "bold",}
-            ],
+            style_header={"fontWeight": "bold"},
         )
 
         return html.Div(
@@ -1673,30 +1418,26 @@ def cell_clicked(active_cell, table):
         return None
 
     row = active_cell["row"]
-    value = table[row][""]
-    x_data = list(table[row].keys())
-    y_data = list(table[row].values())
+    value = table[row]["0"]
+    x_data = [table[0]["1"], table[0]["2"], table[0]["3"], table[0]["4"]]
+    y_data = [table[row]["1"], table[row]["2"], table[row]["3"], table[row]["4"]]
 
     figson = dcc.Graph(
         id="bar-chart",
-        className="financial-charts",
         figure={
-            "data": [
-                {
-                    "x": x_data,
-                    "y": y_data,
-                    "type": "bar",
-                    "marker": {"color": "#3ad1b8"},
-                }
-            ],
+            "data": [{"x": x_data, "y": y_data, "type": "bar"}],
             "layout": {
                 "title": value,
-                "titlefont": {"color": "white"},
-                "xaxis": {"color": "white", "tickvals": x_data,},
-                "yaxis": {"color": "white"},
-                "plot_bgcolor": "#211F32",
-                "paper_bgcolor": "#211F32",
+                "xaxis": {"title": "Categories"},
+                "yaxis": {"title": "Values"},
             },
+        },
+        style={
+            "width": "600px",
+            "height": "350px",
+            "display": "flex",
+            "margin": "0 auto",
+            "justify-content": "center",
         },
     )
 
@@ -1704,179 +1445,35 @@ def cell_clicked(active_cell, table):
 
 
 @app.callback(
-    Output("statistics_container2", "children"),
-    Output("error_alert_s", "is_open"),
-    [
-        Input("input_ticker", "value"),
-        Input("main_tabs", "value"),
-        Input("start_datepicker", "date"),
-        Input("end_datepicker", "date"),
-        Input("interval_dropdown_s", "value"),
-    ],
+    Output("statistics_container", "children"),
+    [Input("input_ticker", "value"), Input("main_tabs", "value"),],
 )
-def update_statistics(ticker_text, tab, start_date, end_date, interval):
+def update_statistics(ticker_text, tab):
     if tab == "statistics_tab":
+        ticker = Ticker(ticker_text)
 
-        if None in (ticker_text, start_date, end_date, interval):
-            return None, False
+        table_data = ticker.calendar_events
+        table_data.reset_index(inplace=True)
+        # table_data = table_data.drop(table_data.columns[2], axis=1)
 
-        price_data = yf.download(
-            tickers=ticker_text,
-            interval=interval,
-            start=start_date,
-            end=end_date,
-            prepost=False,
-            threads=True,
-        )
-
-        if price_data.empty:
-            return None, True
-
-        price_data["Daily returns"] = (
-            (price_data["Close"] - price_data["Close"].shift(1))
-            / price_data["Close"].shift(1)
-            * 100
-        )
-        average_return = price_data["Daily returns"].mean()
-        zeros_after_decimal = count_zeros_after_decimal(average_return)
-        multiplier = float("0." + "0" * zeros_after_decimal + "5")
-
-        price_data["Rounded daily returns"] = (
-            round(price_data["Daily returns"] / multiplier) * multiplier
-        )
-        price_data["Counted returns"] = None
-        for i in range(len(price_data.index)):
-            price_data["Counted returns"].iloc[i] = price_data[
-                price_data["Rounded daily returns"]
-                == price_data["Rounded daily returns"].iloc[i]
-            ]["Rounded daily returns"].count()
-
-        distribution_data = price_data.iloc[:, -2:]
-        distribution_data.drop_duplicates(subset=["Rounded daily returns"])
-        distribution_data = distribution_data.set_index("Rounded daily returns")
-        distribution_data.sort_index(inplace=True)
-
-        price_data["Daily log returns"] = round(
-            np.log(1 + price_data["Daily returns"]), 2
-        )
-        volatility = price_data["Daily log returns"].std()
-
-        if price_data.index.name == "Datetime":
-            x_values = price_data.index.strftime("%d-%m-%Y %H:%M")
-        else:
-            x_values = price_data.index.strftime("%d-%m-%Y")
-
-        linear_regression_params = get_linear_regression_params(
-            ticker_text, interval, start_date, end_date
-        )
-        returns = linear_regression_params["Returns"]
-        correlation = linear_regression_params["Correlation"]
-        trend = linear_regression_params["Trend"]
-
-        percentage_returns_statistics = get_percentage_returns_statistics(price_data)
-        print(percentage_returns_statistics)
-
-        linear_regression_fig = dcc.Graph(
-            id="linear_regression_chart",
-            className="financial-charts",
-            figure={
-                "data": [
-                    {
-                        "name": ticker_text,
-                        "x": returns["SPY"],
-                        "y": returns[ticker_text],
-                        "mode": "markers",
-                        "marker": {"color": "#3ad1b8"},
-                    },
-                    {
-                        "name": "Trend",
-                        "x": returns[ticker_text],
-                        "y": trend,
-                        "marker": {"color": "magenta"},
-                    },
-                ],
-                "layout": {
-                    "title": "Linear regression",
-                    "titlefont": {"color": "white"},
-                    "legend": {"font": {"color": "white"}},
-                    "xaxis": {"color": "white", "title": ticker_text},
-                    "yaxis": {"color": "white", "title": "S&P500"},
-                    "plot_bgcolor": "#211F32",
-                    "paper_bgcolor": "#211F32",
-                },
+        table = dash_table.DataTable(
+            id="statistics_table",
+            data=table_data.to_dict("records"),
+            style_table={
+                "maxWidth": "700px",
+                "marginLeft": "auto",
+                "marginRight": "auto",
+            },  # Center the table horizontally
+            style_cell={
+                "whiteSpace": "normal",
+                "textAlign": "center",
+                "color": "white",
+                "backgroundColor": "#211F32",
             },
-            style={"height": "500px", "width": "750px", "margin-bottom": "0px"},
+            style_header={"fontWeight": "bold"},
         )
 
-        # linear_regression_fig.add_traces(go.Scatter(x=returns[ticker_text], y=trend))
-
-        percentage_returns_fig = dcc.Graph(
-            id="percentage_returns_chart",
-            className="financial-charts",
-            figure={
-                "data": [
-                    {
-                        "x": x_values,
-                        "y": price_data["Daily returns"],
-                        "line": {"color": "#3ad1b8"},
-                    }
-                ],
-                "layout": {
-                    "title": "Percentage returns",
-                    "titlefont": {"color": "white"},
-                    "xaxis": {"color": "white", "dtick": len(x_values) // 10},
-                    "yaxis": {"color": "white"},
-                    "plot_bgcolor": "#211F32",
-                    "paper_bgcolor": "#211F32",
-                },
-            },
-            style={
-                "justify-content": "center",
-                "margin-top": "0px",
-                "margin-bottom": "0px",
-                "height": "400px",
-                "overflow": "hidden",
-                "background-color": "#211F32",
-                "width": "1700px",
-            },
-        )
-
-        distribution_fig = dcc.Graph(
-            id="distribution-chart",
-            className="financial-charts",
-            figure={
-                "data": [
-                    {
-                        "x": distribution_data.index,
-                        "y": distribution_data["Counted returns"],
-                        "type": "histogram",
-                        "marker": {"color": "#3ad1b8"},
-                    }
-                ],
-                "layout": {
-                    "title": "Return distributions",
-                    "titlefont": {"color": "white"},
-                    "xaxis": {"color": "white"},
-                    "yaxis": {"color": "white"},
-                    "plot_bgcolor": "#211F32",
-                    "paper_bgcolor": "#211F32",
-                },
-            },
-            style={"height": "500px", "width": "750px", "margin-bottom": "0px"},
-        )
-
-    return (
-        html.Div(
-            children=[
-                html.Div(
-                    children=[linear_regression_fig, distribution_fig],
-                    style={"display": "flex", "margin-bottom": "0px"},
-                ),
-                percentage_returns_fig,
-            ]
-        ),
-        False,
-    )
+        return table
 
 
 @app.callback(
