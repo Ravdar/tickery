@@ -1416,8 +1416,6 @@ def show_info(ticker_text):
     currency = ticker.info["currency"]
     logo_url = find_logo(ticker_text)
     industry = ticker.info["industry"]
-    # country = ticker.info["country"]
-    # flag = find_flag(country)
     exchange = ticker_yq.price[ticker_text]["exchangeName"]
     history = ticker.history(period="1m")
     last_price = round(history["Close"].iloc[-1], 2)
