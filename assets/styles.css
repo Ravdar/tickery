@@ -82,3 +82,141 @@ td.dash-cell.cell--selected.focused {
 td.dash-cell {
     border-color: #3ad1b8 !important;
 }
+
+/* Statistics tab */
+
+.stat-1-div {
+    margin-left: 40px;
+    margin-right: 40px;
+    justify-content: center;
+    display: inline-block;
+}
+
+.stat-2-div {
+    margin-left: 20px;
+    margin-right: 20px;
+    justify-content: center;
+    display: flex;
+    margin-bottom: 30px;
+}
+
+.stat-3-div {
+    margin-left: 10px;
+    justify-content: center;
+    display: inline-block;
+}
+
+.monte-carlo-menu {
+    justify-content: center;
+    display: inline;
+}
+
+.monte-carlo-title {
+    display: flex;
+    justify-content: center;
+    font-size: 16px;
+    color: white;
+    margin-bottom: 15px;
+
+}
+
+.monte-carlo-buttons-div {
+    justify-content: center;
+    display: flex;
+}
+
+.monte-carlo-graph {
+    height: 640px;
+    width: 900px;
+    overflow: hidden;
+    background-color: #211F32;
+    padding: 5px;
+}
+
+.no-simulations-input {
+    width: 130px;
+    font-size: 12px;
+    justify-content: center;
+    text-align: center;
+    margin-right: 5px;
+}
+
+.simulated-period-input {
+    width: 120px;
+    font-size: 12px;
+    justify-content: center;
+    text-align: center;
+    margin-right: 5px;
+}
+
+.run-simulation-button {
+    width: 120px;
+    display: flex;
+    font-size: 12px;
+    text-align: center;
+    justify-content: center;
+    margin-right: 5px;
+    background-color: #3ad1b8;
+    border-color: #3ad1b8;
+}
+
+.linear-regression-chart {
+    height: 700px;
+    width: 750px;
+    margin-top: 0px;
+    padding-top: 0px;
+    margin-right: 0px;
+}
+
+.distribution-chart {
+    height: 500px;
+    width: 870px;
+    margin: 0px;
+    padding-top: 0px;
+    margin-top: 10px;
+    margin-left: 65px;
+}
+
+.percentage-returns-chart {
+    justify-content: center;
+    margin-top: 0px;
+    height: 400px;
+    background-color: #211F32;
+    padding-top: 0px;
+    width: 100%;
+}
+
+.return-stats-container {
+    justify-content: center;
+    display: flex;
+    text-align: center;
+}
+
+.returns-stats-labels {
+    font-size: 12px;
+    color: white;
+    margin-right: 10px;
+    margin-left: 10px;
+    text-align: center;
+    display: inline;
+}
+
+.monte-carlo-stats-container {
+    justify-content: center;
+    display: flex;
+    text-align: center;
+}
+
+.monte-carlo-stats-labels {
+    font-size: 12px;
+    color: white;
+    margin-right: 10px;
+    margin-left: 10px;
+    text-align: center;
+    display: inline;
+}
+
+.correlation-label {
+    font-size: 25px;
+    color: white;
+}
