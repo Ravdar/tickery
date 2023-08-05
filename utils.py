@@ -67,6 +67,7 @@ def add_indicator_button(
     s2_display,
     button_visible,
 ):
+    """Based on of indicator and indicator settings selected by user, returns html.Div container with main button and clear button"""
 
     return html.Div(
         children=[
@@ -74,14 +75,14 @@ def add_indicator_button(
                 f"{indicator_name}({param_1_value, param_2_value}",
                 id=f"{indicator_short}_button",
                 color="primary",
-                className="me-1",
+                className="indicator-buttons",
                 style={"display": button_visible,},
             ),
             dbc.Button(
                 "X",
                 id=f"{indicator_short}_x_button",
                 color="primary",
-                className="me-1",
+                className="indicator-buttons",
                 style={"display": button_visible,},
             ),
             dbc.Modal(
@@ -123,6 +124,53 @@ def add_indicator_button(
             "margin-bottom": "0px",
         },
     )
+
+
+def prepare_price_statistics(ticker):
+    """Returns html.H5 labels with statistics about price data of provided ticker"""
+
+    ticker["Perc change"] = (ticker["Open"] - ticker["Close"]) / ticker["Open"] * 100
+    ticker["Perc range"] = (ticker["High"] - ticker["Low"]) / ticker["High"] * 100
+    ticker["Gap"] = (ticker["Open"] - ticker["Close"].shift(1)) / ticker["Open"] * 100
+    ticker["Gap"] = ticker["Gap"].fillna(0)
+
+    min = round(ticker["Low"].min(), 2)
+    avg = round(ticker["Close"].mean(), 2)
+    max = round(ticker["High"].max(), 2)
+    perc_change = round(
+        (
+            100
+            * (
+                (int(ticker.iloc[-1, 4]) - int(ticker.iloc[0, 1]))
+                / int(ticker.iloc[0, 1])
+            )
+        ),
+        2,
+    )
+    price_range = round((max - min), 2)
+    perc_range = round((price_range / max * 100), 2)
+    # Gap
+    avg_gap = round(ticker["Gap"].mean(), 2)
+    min_gap = round(ticker["Gap"].min(), 2)
+    max_gap = round(ticker["Gap"].max(), 2)
+    # Single candles
+    avg_perc_change = round(ticker["Perc change"].mean(), 2)
+    min_perc_change = round(ticker["Perc change"].min(), 2)
+    max_perc_change = round(ticker["Perc change"].max(), 2)
+    avg_perc_range = round(ticker["Perc range"].mean(), 2)
+    min_perc_range = round(ticker["Perc range"].min(), 2)
+    max_perc_range = round(ticker["Perc range"].max(), 2)
+
+    stats = [
+        html.H5(f"Percentage change: {perc_change}%", className="stats_styling"),
+        html.H5(f"Price range: {price_range}", className="stats_styling"),
+        html.H5(f"Percentage range: {perc_range}%", className="stats_styling"),
+        html.H5(f"Min: {min}", className="stats_styling"),
+        html.H5(f"Avg: {avg}", className="stats_styling"),
+        html.H5(f"Max: {max}", className="stats_styling"),
+    ]
+
+    return stats
 
 
 def format_table_data(table_data, frequency):
@@ -178,8 +226,6 @@ def format_table_data(table_data, frequency):
 
     table_data.columns = new_columns
     table_data = table_data.iloc[:, -4:]
-    # # Deleting "EBITDA", it is always nan
-    # table_data.drop("EBITDA", inplace=True)
     table_data.reset_index(inplace=True)
 
     # Formatting table labels text
@@ -253,6 +299,7 @@ def prepare_distribution_and_price_data(ticker_text, interval, start_date, end_d
 
 def count_zeros_after_decimal(number):
     """Counts number of "0" after decimal in selected number"""
+
     number_after_decimal = str(number).split(".")[1]
     count = 1
     for symbol in number_after_decimal:
@@ -309,6 +356,7 @@ def calculate_streak(data, up=True):
 
 def get_percentage_returns_statistics(data):
     """Returns a dictionary containing statistics on the percentage returns of the provided OHLC data."""
+
     data = data[["Close"]]
     data["Percentage returns"] = data["Close"].pct_change() * 100
     data.dropna(inplace=True)
@@ -371,9 +419,8 @@ def monte_carlo_simulation(data, number_of_simulations=150, forecast_period=100)
             prices.append(price)
         simulated_prices[:, simulation] = prices[1:]
 
-    ending_prices = []
-
     return simulated_prices
+
 
 def monte_carlo_statistics(simulated_prices, initial_price):
     """Returns basic statistics of provided simulated prices"""
@@ -383,14 +430,25 @@ def monte_carlo_statistics(simulated_prices, initial_price):
     for simulation in simulated_prices:
         ending_prices.append(simulation[-1])
 
-    max_ending_price = round(max(ending_prices),2)
-    min_ending_price = round(min(ending_prices),2)
-    average_ending_price = round(mean(ending_prices),2)
-    no_ending_price_higher_than_initial = len([price for price in ending_prices if price > initial_price])
-    perc_of_ending_price_above_initial = round(no_ending_price_higher_than_initial/len(ending_prices)*100,2)
+    max_ending_price = round(max(ending_prices), 2)
+    min_ending_price = round(min(ending_prices), 2)
+    average_ending_price = round(mean(ending_prices), 2)
+    no_ending_price_higher_than_initial = len(
+        [price for price in ending_prices if price > initial_price]
+    )
+    perc_of_ending_price_above_initial = round(
+        no_ending_price_higher_than_initial / len(ending_prices) * 100, 2
+    )
     perc_of_ending_price_below_initial = 100 - perc_of_ending_price_above_initial
 
-    return {"Max ending price":max_ending_price, "Min ending price":min_ending_price, "Average ending price":average_ending_price, "Perc of ending prices above initial price":f"{perc_of_ending_price_above_initial}%", "Perc of ending prices below initial price":f"{perc_of_ending_price_below_initial}%"}
+    return {
+        "Max ending price": max_ending_price,
+        "Min ending price": min_ending_price,
+        "Average ending price": average_ending_price,
+        "Perc of ending prices above initial price": f"{perc_of_ending_price_above_initial}%",
+        "Perc of ending prices below initial price": f"{perc_of_ending_price_below_initial}%",
+    }
+
 
 def historical_and_parametric_var_and_cvar(data):
     """Returns VaR and CVaR for 0.95, 0.99 and 0.999 confidence level both for historical and parametric calculation method"""

@@ -1,3 +1,169 @@
+/*Main container */
+.main-container {
+    background-color: #211F32;
+    height: 100dvh;
+    margin: 0px;
+    padding-bottom: 0px;
+}
+
+/*Main logo */
+.main-logo-container {
+    justify-content: center;
+    display: flex;
+}
+
+.main-logo {
+    width: 15%;
+    margin-top: 1%;
+}
+
+/*Search bar */
+.search-bar {
+    width: 17%;
+    height: 4dvh;
+    background-color: white;
+    color: #211F32;
+    margin-bottom: 15px;
+    text-align: center;
+    border-radius: 30px;
+}
+
+/*Main tabs */
+
+.main-tabs {
+    justify-content: center;
+    align-items: center;
+    width: 40% !important;
+}
+
+.main-tabs-container {
+    justify-content: center;
+}
+
+.main-tab {
+    padding: 1% !important;
+    align-items: center;
+    border: 1px solid white !important;
+    background-color: #211F32 !important;
+    color: white !important;
+}
+
+.main-selected-tab {
+    border: 2px solid #3ad1b8 !important;
+    font: bold;
+    background-color: #2f2d48 !important;
+}
+
+/*Short info */
+
+.logo-img {
+    width: 8.3vw;
+    height: 16.4vh;
+    border-radius: 10px;
+    border: 2px solid white;
+    object-fit: fill;
+    object-position: center;
+}
+
+.logo-column {
+    margin-left: 36.5vw;
+    margin-right: 0px;
+    margin-top: 9px;
+}
+
+.company-name {
+    text-align: left;
+    color: white;
+    margin-left: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.industry-and-exchange {
+    text-align: left;
+    color: white;
+    margin-left: 0;
+}
+
+.short-info-container {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+
+/*Welcome message*/
+.welcome-message {
+    color: white;
+    margin-top: 13.89vh;
+    display: flex;
+    justify-content: center;
+    font-size: 60px;
+    text-align: center;
+}
+
+/*Summary tab content*/
+.summary-container {
+    margin-left: 15.63vw;
+    margin-right: 15.63vw;
+}
+
+.stat-container {
+    display: flex;
+    margin-bottom: 0px;
+    justify-content: center;
+}
+
+.stat-labels {
+    color: white;
+    margin-right: 1.04vw;
+    font-size: 12px;
+}
+
+.simple-price-graph {
+    margin-bottom: 0px;
+    padding-bottom: 0px;
+    margin-right: 0px;
+    padding-right: 0px;
+    height: 37vh;
+    overflow: hidden;
+    background-color: #211F32;
+}
+
+.range-slider .rc-slider-track {
+    background-color: #3ad1b8;
+}
+
+.range-slider .rc-slider-handle {
+    border-color: #3ad1b8;
+}
+
+.radar-chart {
+    width: 20.83vw;
+    height: 37.04vh;
+    margin-left: 2.6vw;
+}
+
+/* Main chart tab */
+.main-chart-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    background-color: #211F32;
+}
+
+.chart-dropdowns {
+    background-color: #211F32;
+    width: 7.29vw;
+    margin: 0.5px;
+
+}
+
+.is-focused:not(.is-open)>.Select-control {
+    border-color: #3ad1b8;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 0 3px rgba(0, 126, 255, .1)
+}
+
 .Select-control {
     background-color: #211F32 !important;
     color: white;
@@ -5,6 +171,54 @@
 
 .Select-value-label {
     color: white !important;
+}
+
+.Select--single .Select-control:focus {
+    border-color: #3ad1b8 !important;
+}
+
+.Select-menu-outer {
+    background-color: #211F32;
+    color: white;
+}
+
+.chart-date-picker {
+    padding: 0px;
+}
+
+.DateInput,
+.DateInput_1 {
+    border-radius: 4px 0 0 4px !important;
+}
+
+.DateInput_input,
+.DateInput_input_1 {
+    Height: 34px !important;
+    Width: 100% !important;
+    border-radius: inherit;
+}
+
+.SingleDatePickerInput__withBorder {
+    border-radius: 4px 0 0 4px;
+    border: 1px solid #ccc !important;
+}
+
+.modals-and-stats {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    background-color: #211F32;
+}
+
+.indicator-buttons {
+    border-color: #3ad1b8 !important;
+}
+
+.main-chart {
+    width: 100%;
+    height: 50.93vh;
+    background-color: #211F32;
+    overflow: hidden;
 }
 
 .stats_styling {
@@ -20,9 +234,35 @@
 }
 
 .interval-dd-stat {
-    display: flex;
+    display: flex !important;
     justify-content: center !important;
     margin-right: 0px;
+}
+
+.interval-dropdown-s {
+    width: 8vw !important
+}
+
+.financials-sub-tab {
+    width: 20.83vw;
+    display: flex;
+    font-size: 12px;
+    margin-right: 3.13vw;
+    border: none;
+}
+
+.qora-tabs {
+    display: flex;
+    font-size: 10px;
+    border: none;
+    width: 7.81vw
+}
+
+.financials-tabs-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 5px;
 }
 
 .custom-tabs {
@@ -33,7 +273,7 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    height: 50px;
+    height: 4.6vh;
     border-top: none !important;
     border-right: none !important;
     border-left: none !important;
@@ -50,7 +290,7 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    height: 50px;
+    height: 4.6vh;
     border-top: 2px solid #3ad1b8 !important;
     border-left: 2px solid #3ad1b8 !important;
     border-right: 2px solid #3ad1b8 !important;
@@ -60,13 +300,9 @@
     font-weight: bold !important;
 }
 
-.main-selected-tab {
-    border-top: 2px solid #3ad1b8 !important;
-}
-
 .financial-charts {
-    width: 610px;
-    height: 350px;
+    width: 31.77vw;
+    height: 32.41vh;
     display: flex;
     margin: 0 auto;
     justify-content: center;
@@ -84,17 +320,16 @@ td.dash-cell {
 }
 
 /* Statistics tab */
-
 .stat-1-div {
-    margin-left: 40px;
-    margin-right: 40px;
+    margin-left: 2.08vw;
+    margin-right: 2.08vw;
     justify-content: center;
     display: inline-block;
 }
 
 .stat-2-div {
-    margin-left: 20px;
-    margin-right: 20px;
+    margin-left: 1.04vw;
+    margin-right: 1.04vw;
     justify-content: center;
     display: flex;
     margin-bottom: 30px;
@@ -126,15 +361,15 @@ td.dash-cell {
 }
 
 .monte-carlo-graph {
-    height: 640px;
-    width: 900px;
+    width: 46.88vw;
+    height: 59.26vh;
     overflow: hidden;
     background-color: #211F32;
     padding: 5px;
 }
 
 .no-simulations-input {
-    width: 130px;
+    width: 6.77vw;
     font-size: 12px;
     justify-content: center;
     text-align: center;
@@ -142,7 +377,7 @@ td.dash-cell {
 }
 
 .simulated-period-input {
-    width: 120px;
+    width: 6.25vw;
     font-size: 12px;
     justify-content: center;
     text-align: center;
@@ -150,7 +385,7 @@ td.dash-cell {
 }
 
 .run-simulation-button {
-    width: 120px;
+    width: 6.25vw;
     display: flex;
     font-size: 12px;
     text-align: center;
@@ -160,27 +395,62 @@ td.dash-cell {
     border-color: #3ad1b8;
 }
 
+.run-simulation-button:hover {
+    background-color: aquamarine !important;
+    border-color: aquamarine !important;
+}
+
 .linear-regression-chart {
-    height: 700px;
-    width: 750px;
+    width: 39.06vw;
+    height: 64.81vh;
     margin-top: 0px;
     padding-top: 0px;
     margin-right: 0px;
 }
 
+.correlation-and-monte-carlo-row {
+    justify-content: center;
+    display: flex;
+}
+
+.correlation-and-monte-carlo-col {
+    justify-content: center;
+    display: flex;
+}
+
+.monte-carlo-stats-container {
+    justify-content: center;
+    display: flex;
+    text-align: center;
+}
+
+.monte-carlo-stats-labels {
+    font-size: 12px;
+    color: white;
+    margin-right: 10px;
+    margin-left: 10px;
+    text-align: center;
+    display: inline-flex;
+}
+
+.correlation-label {
+    font-size: 25px;
+    color: white;
+}
+
 .distribution-chart {
-    height: 500px;
-    width: 870px;
+    width: 45.31vw;
+    height: 46.3vh;
     margin: 0px;
     padding-top: 0px;
     margin-top: 10px;
-    margin-left: 65px;
+    margin-left: 3.39vw;
 }
 
 .percentage-returns-chart {
     justify-content: center;
     margin-top: 0px;
-    height: 400px;
+    height: 37.04vw;
     background-color: #211F32;
     padding-top: 0px;
     width: 100%;
@@ -199,24 +469,4 @@ td.dash-cell {
     margin-left: 10px;
     text-align: center;
     display: inline;
-}
-
-.monte-carlo-stats-container {
-    justify-content: center;
-    display: flex;
-    text-align: center;
-}
-
-.monte-carlo-stats-labels {
-    font-size: 12px;
-    color: white;
-    margin-right: 10px;
-    margin-left: 10px;
-    text-align: center;
-    display: inline;
-}
-
-.correlation-label {
-    font-size: 25px;
-    color: white;
 }

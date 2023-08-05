@@ -5,6 +5,8 @@ import yfinance as yf
 
 
 def value_rating(ticker_text):
+    """Assigns a rating from 0 to 5, depending on PE ratio of the ticker selected by the user"""
+
     ticker = Ticker(ticker_text)
     try:
         pe_ratio = ticker.summary_detail[ticker_text]["trailingPE"]
@@ -23,6 +25,7 @@ def value_rating(ticker_text):
 
 
 def debt_rating(ticker_text):
+    """Assigns a rating from 0 to 5, depending on debt to equity ratio of the ticker selected by the user"""
     ticker = Ticker(ticker_text)
     try:
         de_ratio = ticker.financial_data[ticker_text]["debtToEquity"] / 100
@@ -41,6 +44,8 @@ def debt_rating(ticker_text):
 
 
 def stability_rating(ohlc_data):
+    """Assigns a rating from 0 to 5, depending on volatility of the ticker selected by the user"""
+
     try:
         data_length = len(ohlc_data.index)
         ohlc_data["Log Returns"] = np.log(
@@ -62,6 +67,7 @@ def stability_rating(ohlc_data):
 
 
 def dividend_rating(ticker_text):
+    """Assigns a rating from 0 to 5, depending on trailing annual dividend yield of the ticker selected by the user"""
     ticker = Ticker(ticker_text)
     try:
         dividend_yield = (
@@ -84,6 +90,7 @@ def dividend_rating(ticker_text):
 
 
 def future_rating(ticker_text):
+    """Assigns a rating from 0 to 5, depending on forward EPS of the ticker selected by the user"""
 
     ticker = Ticker(ticker_text)
     try:
@@ -103,6 +110,7 @@ def future_rating(ticker_text):
 
 
 def check_all(ticker_text):
+    """Returns a lists of all company condition ratings"""
 
     price_data = yf.download(
         tickers=ticker_text, interval="1d", period="1y", prepost=False, threads=True,
@@ -117,7 +125,5 @@ def check_all(ticker_text):
 
     list = [value, debt, stability, dividend, future]
 
-    print(list)
-
-    return True
+    return list
 
