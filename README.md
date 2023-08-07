@@ -23,11 +23,11 @@ Users can visualize the data as bar charts, enhancing their understanding of the
 ## 4. Statistics
 The Statistics tab offers advanced analytical tools:
 
-Linear regression and correlation with the S&P 500 index.
-Customizable Monte Carlo simulation for risk assessment.
-Value at Risk (VaR) and Conditional Value at Risk (CVaR) data.
-Return distribution histogram.
-Percentage returns linear chart.
+* Linear regression and correlation with the S&P 500 index.
+* Customizable Monte Carlo simulation for risk assessment.
+* Value at Risk (VaR) and Conditional Value at Risk (CVaR) data.
+* Return distribution histogram.
+* Percentage returns linear chart.
 
 # Installation
 1. Clone the repository:
