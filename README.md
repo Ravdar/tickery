@@ -36,7 +36,7 @@ Percentage returns linear chart.
 ```pip install -r requirements.txt```
 3. Run the application:
 ```python main.py```
-4. Access the app in your web browser at **http://localhost:8050**
+4. Access the app in your web browser at **http://localhost:1023**
 
 # Used libraries
 *pandas
