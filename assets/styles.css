@@ -160,8 +160,8 @@
 }
 
 .is-focused:not(.is-open)>.Select-control {
-    border-color: #3ad1b8;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 0 3px rgba(0, 126, 255, .1)
+    border-color: #3ad1b8 !important;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 0 3px rgba(0, 126, 255, .1) !important;
 }
 
 .Select-control {
@@ -178,8 +178,8 @@
 }
 
 .Select-menu-outer {
-    background-color: #211F32;
-    color: white;
+    background-color: #211F32 !important;
+    color: white !important;
 }
 
 .chart-date-picker {

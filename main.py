@@ -49,7 +49,10 @@ GREEN = "#00b51a"
 RED = "#ff2d21"
 BG_COLOR = "#211F32"
 
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP, "assets/styles.css"])
+app = dash.Dash(
+    external_stylesheets=[dbc.themes.BOOTSTRAP, "assets/styles.css"],
+    suppress_callback_exceptions=True,
+)
 
 # Main layout
 app.layout = html.Div(
@@ -1811,4 +1814,5 @@ def run_simulation(
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=1023)
+
