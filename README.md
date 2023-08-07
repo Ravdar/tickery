@@ -11,14 +11,14 @@ The Summary tab provides basic information about the selected company's price da
 ## 2. Main chart
 In the Main Chart tab, users can perform in-depth analysis of price data. Key features include:
 
-Selecting a specific time period for analysis.
-Utilizing technical indicators such as Bollinger Bands, MACD, and stochastic indicators.
+* Selecting a specific time period for analysis.
+* Utilizing technical indicators such as Bollinger Bands, MACD, and stochastic indicators.
 ## 3. Financials
 The Financials tab presents essential financial statements for the company:
 
-Balance Sheet
-Income Statement
-Cash Flow
+* Balance Sheet
+* Income Statement
+* Cash Flow
 Users can visualize the data as bar charts, enhancing their understanding of the company's financial health.
 ## 4. Statistics
 The Statistics tab offers advanced analytical tools:
@@ -39,10 +39,10 @@ Percentage returns linear chart.
 4. Access the app in your web browser at **http://localhost:1023**
 
 # Used libraries
-*pandas
-*numpy
-*scipy
-*yfinance
-*yahooquery
-*matplotlib
-*plotly
+* pandas
+* numpy
+* scipy
+* yfinance
+* yahooquery
+* matplotlib
+* plotly
