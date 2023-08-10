@@ -29,6 +29,13 @@ The Statistics tab offers advanced analytical tools:
 * Return distribution histogram.
 * Percentage returns linear chart.
 
+# Screenshots
+![tickery - summary](https://github.com/Ravdar/tickery/assets/97836782/1c0e492c-cc8c-4d67-930b-6ff6b32762ad)
+![tickery - main chart](https://github.com/Ravdar/tickery/assets/97836782/2b286c22-6af8-400e-8fcb-6f4799b8e22e)
+![tickery - financials](https://github.com/Ravdar/tickery/assets/97836782/df081388-8879-481d-9af1-f83785d4420c)
+![tickery - statistics](https://github.com/Ravdar/tickery/assets/97836782/94515924-6978-4e6d-b573-4f1b6b53c1e0)
+
+
 # Installation
 1. Clone the repository:
 ```git clone https://github.com/Ravdar/tickery```
