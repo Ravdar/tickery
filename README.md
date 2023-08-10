@@ -1,4 +1,4 @@
-# Tickery: Stock Analysis Dashboard
+# ![T logo](https://github.com/Ravdar/tickery/assets/97836782/096e1d4b-c95f-4019-b15b-f3de0054ed65) Tickery: Stock Analysis Dashboard
 
 Tickery is a Python-based web application built with Plotly Dash that allows users to analyze stock data for a given company. The application provides comprehensive insights into price data, technical indicators, financial statements, and statistical analysis. Whether you're a trader, investor, or simply curious about stock trends, Tickery has something to offer.
 
