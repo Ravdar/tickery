@@ -2,6 +2,11 @@
 
 Tickery is a Python-based web application built with Plotly Dash that allows users to analyze stock data for a given company. The application provides comprehensive insights into price data, technical indicators, financial statements, and statistical analysis. Whether you're a trader, investor, or simply curious about stock trends, Tickery has something to offer.
 
+
+https://github.com/Ravdar/tickery/assets/97836782/34ba3dab-bea8-4229-98d8-76ea3c5f03db
+
+For a more detailed video with my commentary, click [here.](https://www.youtube.com/watch?v=VewCNybNQKE)
+
 # Features
 
 Tickery offers a variety of features to assist users in effectively analyzing stock data. These features are categorized into four areas:
@@ -19,6 +24,7 @@ The Financials tab presents essential financial statements for the company:
 * Balance Sheet
 * Income Statement
 * Cash Flow
+
 Users can visualize the data as bar charts, enhancing their understanding of the company's financial health.
 ## 4. Statistics
 The Statistics tab offers advanced analytical tools:
